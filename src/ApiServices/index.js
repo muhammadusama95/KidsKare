@@ -9,6 +9,7 @@ class ServicesApi {
     getClasses: "classes/getclasses",
     getBusses: "busses/getbusses",
     getChildren: "baseChildren/listForSchool",
+    checkInOut: "rollcall/call",
   };
 
   getApiUrl = (endpoint) => {
@@ -89,6 +90,26 @@ class ServicesApi {
         callback({ isSuccess: false, response: error })
       });
   };
+
+  checkInOut = (token, params, callback) => {
+    let url = this.getApiUrl(this.endPoints.checkInOut)
+    var config = {
+      method: 'post',
+      url: url,
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      data: params
+    };
+    axios(config)
+      .then((response) => callback({ isSuccess: true, response: response?.data }))
+      .catch((error) => {
+        console.log(error)
+        callback({ isSuccess: false, response: error })
+      });
+  };
 }
+
+
 const ApiServices = new ServicesApi();
 export default ApiServices;

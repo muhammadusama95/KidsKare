@@ -5,7 +5,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import moment from 'moment'
 import { CheckBox } from 'react-native-elements';
@@ -13,6 +13,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import ApiServices from "../../ApiServices";
 import { AppColor, WP } from '../../helpers';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from "@react-native-community/netinfo";
 
 const Home = () => {
 
@@ -28,6 +29,7 @@ const Home = () => {
   const [selectedClass, setSelectedClass] = useState(0)
   const [selectedBus, setSelectedBus] = useState(0)
   const [children, setChildren] = useState([])
+  const [isConnected, setConnected] = useState(false)
 
 
   const getClasses = (token) => {
@@ -86,10 +88,58 @@ const Home = () => {
   }
 
 
-  const onPress = (item, index) => {
+  const onPress = async (item, index) => {
 
     let arr = [...children]
+    let data = { 
+      type : 'toggle',
+      data : []
+    }
     arr[index].selected = arr[index]?.selected == undefined ? arr[index].selected = true : !arr[index]?.selected
+
+    let locallySavedArray = await AsyncStorage.getItem("roll_call_array")
+    locallySavedArray = JSON.parse(locallySavedArray)
+
+    if (locallySavedArray != null) {
+      locallySavedArray.forEach(element => {
+        data.data.push(element)
+      });
+    }
+    if (arr[index].roll_calls.length === 0) {
+      data.data.push({
+        action: nap ? 'nap' : 'in',
+        child: arr[index].id,
+        nap: 0,
+        timestamp: new Date()
+      })
+    } else {
+      data.data.push({
+        action: arr[index].roll_calls[arr[index].roll_calls.length - 1].direction !== 'out' ? 'out' : nap ? 'nap' : 'in',
+        child: arr[index].id,
+        nap: 0,
+        timestamp: new Date()
+      })
+    }
+
+
+    let forLocalArray = {
+      direction: data.data[data.data.length-1].action,
+      id: moment(data.data[data.data.length-1].timestamp, 'h:mm:ss A"').valueOf(),
+      time: moment(data.data[data.data.length-1].timestamp).format('h:mm:ss A')
+    }
+    arr[index].roll_calls.push(forLocalArray)
+
+    NetInfo.fetch().then(state => {
+      if (state.isConnected) {
+        console.log("PARAMS",data)
+        ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
+          console.log("Response", response)
+          AsyncStorage.removeItem("roll_call_array")
+        })
+      } else {
+        AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
+      }
+    });
     setChildren(arr)
   }
 
