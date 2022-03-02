@@ -25,9 +25,10 @@ const Login = () => {
       ApiServices.login(school,code, ({ isSuccess, response }) => {
         if (isSuccess) {
           if (response?.success === 1) {
-              AsyncStorage.setItem("TOKEN",response.token);
+            AsyncStorage.setItem("Login",JSON.stringify(response));  
+            AsyncStorage.setItem("TOKEN",response.token);
             setLoading(false)
-             navigate("Home")
+            navigate("Home")
           } else if (response?.success === 0) {
             alert(response?.message)
             setLoading(false)
@@ -52,8 +53,21 @@ const Login = () => {
     })
   }
   useEffect(() => {
-    fetchData()
+    checkIfAlreadyLogin()
   }, [])
+
+  checkIfAlreadyLogin = async () => {
+  
+   let loginDetails=await AsyncStorage.getItem("Login");  
+   if(loginDetails)
+   {
+    navigate("Home")
+   }else
+   {
+    fetchData()
+   }
+   
+  }
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

@@ -19,6 +19,9 @@ const Home = () => {
 
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState(null)
+  const [schoolName, setSchoolName] = useState(null)
+  const [address, setSchoolAddress] = useState(null)
+  const [city, setSchoolCity] = useState(null)
   const [final, setFinal] = useState(false)
   const [nap, setNap] = useState(false)
   const [bus, setBus] = useState(false)
@@ -41,9 +44,10 @@ const Home = () => {
           value = item.id;
           arrayios.push({ label: label, key: value, value: value });
         })
+        AsyncStorage.setItem("classes", JSON.stringify(arrayios));
         setClasses(arrayios)
       } else {
-        alert(response)
+        // alert(response)
       }
     })
   }
@@ -57,31 +61,89 @@ const Home = () => {
           value = item.id;
           arrayios.push({ label: label, key: value, value: value });
         })
+        AsyncStorage.setItem("busses", JSON.stringify(arrayios));
         setBusList(arrayios)
       } else {
-        alert(response)
+        // alert(response)
 
       }
     })
   }
 
   const getChildren = (token) => {
+
     ApiServices.getChildren(token, ({ isSuccess, response }) => {
       if (isSuccess) {
+        AsyncStorage.setItem("childsdata", JSON.stringify(response));
         setChildren(response)
       } else {
-        alert(response)
+
+        //alert(response)
       }
     })
   }
 
   fetchData = async () => {
+    let data = {
+      type: 'toggle',
+      data: []
+    }
     let token = await AsyncStorage.getItem('TOKEN')
+    let childArray = await AsyncStorage.getItem("childsdata")
+    let busses = await AsyncStorage.getItem("busses")
+    let classes = await AsyncStorage.getItem("classes")
+    let Login = await AsyncStorage.getItem("Login")
+    let checkInCheckOutDataForUploading = await AsyncStorage.getItem("roll_call_array")
+    checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
+    if (checkInCheckOutDataForUploading != null) {
+      checkInCheckOutDataForUploading.forEach(element => {
+        data.data.push(element)
+      });
+      ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
+        if (isSuccess) {
+          AsyncStorage.removeItem("roll_call_array")
+          checkInCheckOutDataForUploading=null;
+        }
+      })
+    }
+
+    
+
+
+
+    if (Login != null) {
+      Login = JSON.parse(Login)
+      setSchoolName(Login.school.name)
+      setSchoolAddress(Login.school.address)
+      setSchoolCity(Login.school.city + ", " + Login.school.state + " " + Login.school.zip + " " + Login.school.phone)
+
+    }
+
+    if (childArray != null) {
+      childArray = JSON.parse(childArray)
+      setChildren(childArray);
+    }
+
+
+
+
+    // if (busses != null) {
+    //   busses = JSON.parse(busses)
+    //   setBusList(busses);
+    // }
+    // if (classes != null) {
+    //   classes = JSON.parse(classes)
+    //   setClasses(childArray);
+    // }
+
     setToken(token)
     if (token) {
       await getClasses(token)
-      await getChildren(token)
       await getBusses(token)
+      if(checkInCheckOutDataForUploading==null)
+      await getChildren(token)
+
+      
 
     }
     setLoading(false)
@@ -91,14 +153,16 @@ const Home = () => {
   const onPress = async (item, index) => {
 
     let arr = [...children]
-    let data = { 
-      type : 'toggle',
-      data : []
+    let data = {
+      type: 'toggle',
+      data: []
     }
     arr[index].selected = arr[index]?.selected == undefined ? arr[index].selected = true : !arr[index]?.selected
 
     let locallySavedArray = await AsyncStorage.getItem("roll_call_array")
     locallySavedArray = JSON.parse(locallySavedArray)
+
+
 
     if (locallySavedArray != null) {
       locallySavedArray.forEach(element => {
@@ -109,29 +173,30 @@ const Home = () => {
       data.data.push({
         action: nap ? 'nap' : 'in',
         child: arr[index].id,
-        nap: 0,
+        nap: nap ? 1 : 0,
         timestamp: new Date()
       })
+
     } else {
       data.data.push({
         action: arr[index].roll_calls[arr[index].roll_calls.length - 1].direction !== 'out' ? 'out' : nap ? 'nap' : 'in',
         child: arr[index].id,
-        nap: 0,
+        nap: nap ? 1 : 0,
         timestamp: new Date()
       })
     }
 
 
     let forLocalArray = {
-      direction: data.data[data.data.length-1].action,
-      id: moment(data.data[data.data.length-1].timestamp, 'h:mm:ss A"').valueOf(),
-      time: moment(data.data[data.data.length-1].timestamp).format('h:mm:ss A')
+      direction: data.data[data.data.length - 1].action,
+      id: moment(data.data[data.data.length - 1].timestamp, 'h:mm:ss A"').valueOf(),
+      time: moment(data.data[data.data.length - 1].timestamp).format('h:mm:ss A')
     }
     arr[index].roll_calls.push(forLocalArray)
 
     NetInfo.fetch().then(state => {
       if (state.isConnected) {
-        console.log("PARAMS",data)
+        console.log("PARAMS", data)
         ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
           console.log("Response", response)
           AsyncStorage.removeItem("roll_call_array")
@@ -140,6 +205,7 @@ const Home = () => {
         AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
       }
     });
+    AsyncStorage.setItem("childsdata", JSON.stringify(arr))
     setChildren(arr)
   }
 
@@ -152,9 +218,9 @@ const Home = () => {
       <View style={styles.rowDirection}>
         <View style={styles.left_bar}>
           <View style={styles.school_info}>
-            <Text style={styles.textBold}>Kids Kare El Paseo</Text>
-            <Text style={styles.school_admin}>Hayes/Herndon</Text>
-            <Text style={styles.school_addr}>Fresno, CA 93711 (559) 275-1169</Text>
+            <Text style={styles.textBold}>{schoolName}</Text>
+            <Text style={styles.school_admin}>{address}</Text>
+            <Text style={styles.school_addr}>{city}</Text>
           </View>
           <View style={styles.school_info}>
             <Text style={styles.textBold}>Daily Roll Call Sheet</Text>
@@ -331,8 +397,7 @@ const styles = StyleSheet.create({
     fontSize: WP(3.5)
   },
   school_addr: {
-    fontSize: WP(2),
-    color: 'white'
+    fontSize: WP(2)
   },
   time: {
     fontSize: WP(2),
