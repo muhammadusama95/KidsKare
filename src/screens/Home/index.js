@@ -6,15 +6,19 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import moment from 'moment'
+import moment, { min } from 'moment'
 import { CheckBox } from 'react-native-elements';
 import DropDownPicker from 'react-native-dropdown-picker';
 import ApiServices from "../../ApiServices";
 import { AppColor, WP } from '../../helpers';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from "@react-native-community/netinfo";
+import { Modal, ModalContent } from "react-native-modals";
+import { hours, minutes, AMPM, type } from '../../helpers/Constants';
 
+const Array = ["Hello", "ANDknad", "ALDNlaskdn"]
 const Home = () => {
 
   const [loading, setLoading] = useState(false)
@@ -33,8 +37,23 @@ const Home = () => {
   const [selectedBus, setSelectedBus] = useState(0)
   const [children, setChildren] = useState([])
   const [isConnected, setConnected] = useState(false)
+  const [isVisible, setVisible] = useState(false)
+  const [modalHour, setHour] = useState(1)
+  const [modalMinute, setMinute] = useState(0)
+  const [modalSec, setSec] = useState(0)
+  const [modalAMPM, setAMPM] = useState(0)
+  const [modalType, setType] = useState(0)
+  const [selectedItem, setItem] = useState(null)
+  const dropDown1 = React.useRef();
+  const dropDown2 = React.useRef();
+  const dropDown3 = React.useRef();
+  const dropDown4 = React.useRef();
+  const dropDown5 = React.useRef();
 
 
+  useEffect(() => {
+
+  }, [])
   const getClasses = (token) => {
     ApiServices.getClasses(token, ({ isSuccess, response }) => {
       if (isSuccess) {
@@ -102,12 +121,12 @@ const Home = () => {
       ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
         if (isSuccess) {
           AsyncStorage.removeItem("roll_call_array")
-          checkInCheckOutDataForUploading=null;
+          checkInCheckOutDataForUploading = null;
         }
       })
     }
 
-    
+
 
 
 
@@ -140,13 +159,134 @@ const Home = () => {
     if (token) {
       await getClasses(token)
       await getBusses(token)
-      if(checkInCheckOutDataForUploading==null)
-      await getChildren(token)
+      if (checkInCheckOutDataForUploading == null)
+        await getChildren(token)
 
-      
+
 
     }
     setLoading(false)
+  }
+
+  const getType = (direction) => {
+    if (direction == 'in') {
+      return 0
+    }
+    else if (direction == 'out') {
+      return 1
+    }
+    else {
+      return 2
+    }
+  }
+  const showModal = (item) => {
+    let now = moment(item.time, 'hh:mm:ss')
+    console.log(now.hour() === 0 ? 12 : now.hour())
+    console.log(item)
+    setHour(now.hour() === 0 ? 12 : now.hour())
+    setMinute(now.minute())
+    setSec(now.second())
+    setAMPM(item.time.slice(-2) === 'AM' ? 0 : 1)
+    setType(getType(item.direction))
+    setVisible(true)
+
+  }
+
+  const updateEntry = async () => {
+    let allChildren = [...children]
+    let arr = allChildren[selectedItem.index].roll_calls
+    let direction = modalType === 0 ? 'in' : modalType === 1 ? 'out' : 'nap'
+    let ampm = modalAMPM === 0 ? 'am' : 'pm'
+    var foundIndex = arr.findIndex(x => x.id == selectedItem.id);
+    // arr.map((item)=> selectedItem.id === element.id ? {...element, direction : 'yes'} : {...element, direction : 'no'} )
+
+    console.log(modalMinute)
+    let hour = modalHour < 10 ? '0' + modalHour : modalHour
+    let minute = modalMinute < 10 ? '0' + modalMinute : modalMinute
+    let secs = modalSec < 10 ? "0" + modalSec : modalSec
+
+    console.log(minute)
+    arr[foundIndex] = {
+      id: selectedItem.id,
+      direction: direction,
+      time: hour
+        + ':' +
+        minute
+        + ":" +
+        secs
+        + " " +
+        ampm
+    }
+    allChildren[selectedItem.index].roll_calls = arr
+    // console.log(allChildren[selectedItem.index].roll_calls)
+    setChildren(allChildren)
+
+    let previousArray = await AsyncStorage.getItem("roll_call_array_update")
+    let currentEntry = {
+      "entry": selectedItem.id,
+      "hour": modalHour,
+      "minute": modalMinute,
+      "second": modalSec,
+      "ampm": ampm,
+      "direction": direction
+    }
+
+
+    let entries = previousArray !== null ? JSON.parse(previousArray) : []
+
+    entries.push(currentEntry)
+
+    let params = {
+      type: "updateentry",
+      entries: entries
+    }
+
+    NetInfo.fetch().then(state => {
+      if (state.isConnected) {
+        console.log("PARAMS", params)
+        ApiServices.checkInOut(token, params, ({ isSuccess, response }) => {
+          console.log("Response", response)
+          AsyncStorage.removeItem("roll_call_array_update")
+        })
+      } else {
+        AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
+      }
+    });
+
+    setVisible(false)
+
+  }
+
+  const deleteEntry = async(item) => {
+
+    let allChildren = [...children]
+    let arr = allChildren[selectedItem.index].roll_calls
+    var foundIndex = arr.findIndex(x => x.id == selectedItem.id);
+  let previousArray = await AsyncStorage.getItem("roll_call_array_delete")
+  
+  let entries = previousArray !== null ? previousArray : []
+  
+  arr.splice(foundIndex, 1)
+  entries.push({
+    entry : selectedItem.id
+  })
+
+  let params  = {
+    type : "removeentry",
+    entries : entries
+  }
+    NetInfo.fetch().then(state => {
+      if (state.isConnected) {
+        console.log("PARAMS", params)
+        ApiServices.checkInOut(token, params, ({ isSuccess, response }) => {
+          console.log("Response", response)
+          AsyncStorage.removeItem("roll_call_array_delete")
+        })
+      } else {
+        AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
+      }
+    });
+    setVisible(false)
   }
 
 
@@ -239,12 +379,14 @@ const Home = () => {
                 onChangeItem={(item) => {
                   setSortByValue(item.key)
                 }}
+                defaultValue={0}
                 selectedLabelStyle={{ color: AppColor.black }}
                 containerStyle={styles.dropDownContainerStyle}
                 placeholderStyle={styles.dropDownplaceholder}
                 labelStyle={styles.dropDownLable}
                 itemStyle={styles.dropDownItem}
                 dropDownStyle={styles.dropDown}
+                textStyle={{color : 'red'}}
                 activeLabelStyle={styles.dropDownActiveLable}
                 style={styles.mainDropDown}
                 dropDownMaxHeight={WP(40)}
@@ -343,9 +485,13 @@ const Home = () => {
                 </TouchableOpacity>
                 <FlatList data={item.roll_calls}
                   style={{}}
-                  renderItem={({ item, index }) => {
+                  renderItem={({ item }) => {
                     return (
-                      <TouchableOpacity style={styles.chkItem}>
+                      <TouchableOpacity style={styles.chkItem} onPress={() => {
+                        let mainIndex = { ...item, index: index }
+                        showModal(mainIndex)
+                        setItem(mainIndex)
+                      }}>
                         <View>
                           <Text style={styles.time}>{item.time}</Text>
                         </View>
@@ -366,6 +512,147 @@ const Home = () => {
           keyExtractor={(item, index) => index}
         />
       </ScrollView>
+
+      <Modal
+        visible={isVisible}
+        onTouchOutside={() => {
+          setVisible(false)
+        }}
+      >
+        <ModalContent>
+          <TouchableWithoutFeedback onPress={() => {
+            dropDown1.current.close()
+            dropDown2.current.close()
+            dropDown3.current.close()
+            dropDown4.current.close()
+            dropDown5.current.close()
+          }}>
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+
+              <Text style={{ width: '100%', textAlign: 'center', marginBottom: 20 }}>Edit Time</Text>
+              <View style={{ height: WP(20), flexDirection: 'row', zIndex: 2000 }}>
+                <DropDownPicker
+                  items={hours}
+                  defaultValue={modalHour}
+                  dropDownStyle={{ height: 10 }}
+                  containerStyle={{ height: 40, width: WP(17) }}
+                  style={{ backgroundColor: '#fafafa', }}
+                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  dropDownMaxHeight={WP(25)}
+                  controller={(instance) => dropDown1.current = instance}
+                  onOpen={() => {
+                    dropDown2.current.close()
+                    dropDown3.current.close()
+                    dropDown4.current.close()
+                    dropDown5.current.close()
+                  }}
+                  onChangeItem={item => {
+                    setHour(item.value)
+                  }}
+                />
+
+                <DropDownPicker
+                  items={minutes()}
+                  defaultValue={modalMinute}
+                  containerStyle={{ height: 40, width: WP(17), marginLeft: 10 }}
+                  style={{ backgroundColor: '#fafafa' }}
+                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  dropDownMaxHeight={WP(25)}
+                  setValue={modalMinute}
+                  onOpen={() => {
+                    dropDown1.current.close()
+                    dropDown3.current.close()
+                    dropDown4.current.close()
+                    dropDown5.current.close()
+                  }}
+                  onChangeItem={item => {
+                    setMinute(item.value)
+                  }}
+                  controller={(instance) => dropDown2.current = instance}
+                />
+
+                <DropDownPicker
+                  items={minutes()}
+                  defaultValue={modalSec}
+                  containerStyle={{ height: 40, width: WP(17), marginLeft: 10 }}
+                  style={{ backgroundColor: '#fafafa' }}
+                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  dropDownMaxHeight={WP(25)}
+                  onChangeItem={item => {
+                    setSec(item.value)
+                  }}
+                  controller={(instance) => dropDown3.current = instance}
+                  onOpen={() => {
+                    dropDown1.current.close()
+                    dropDown2.current.close()
+                    dropDown4.current.close()
+                    dropDown5.current.close()
+                  }}
+                />
+
+
+                <DropDownPicker
+                  items={AMPM}
+                  defaultValue={modalAMPM}
+                  containerStyle={{ height: 40, width: WP(18), marginLeft: 10 }}
+                  style={{ backgroundColor: '#fafafa' }}
+                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  dropDownMaxHeight={WP(25)}
+                  controller={(instance) => dropDown4.current = instance}
+                  onOpen={() => {
+                    dropDown1.current.close()
+                    dropDown2.current.close()
+                    dropDown3.current.close()
+                    dropDown5.current.close()
+                  }}
+                  onChangeItem={item => {
+                    setAMPM(item.value)
+                  }}
+                />
+
+
+                <DropDownPicker
+                  items={type}
+                  defaultValue={modalType}
+                  containerStyle={{ height: 40, width: WP(18), marginLeft: 10 }}
+                  style={{ backgroundColor: '#fafafa' }}
+                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  dropDownMaxHeight={WP(25)}
+                  onChangeItem={item => {
+                    setType(item.value)
+                  }}
+                  controller={(instance) => dropDown5.current = instance}
+
+                  onOpen={() => {
+                    dropDown1.current.close()
+                    dropDown3.current.close()
+                    dropDown4.current.close()
+                    dropDown2.current.close()
+                  }}
+                />
+              </View>
+              <View style={{ flexDirection: 'row' }}>
+                <TouchableOpacity onPress={()=> deleteEntry()}
+                style={{ backgroundColor: 'red', borderWidth: 0.4, borderColor: '#000', paddingVertical: 10, paddingHorizontal: 20 }}>
+                  <Text style={{ color: '#fff' }}>Delete</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => { setVisible(false) }}
+                  style={{ backgroundColor: 'yellow', borderWidth: 0.4, borderColor: '#000', paddingVertical: 10, paddingHorizontal: 20, marginHorizontal: 50 }}>
+                  <Text>Cancel</Text>
+                </TouchableOpacity>
+
+
+                <TouchableOpacity onPress={() => updateEntry()}
+                  style={{ backgroundColor: '#0aaae0', borderWidth: 0.4, borderColor: '#000', paddingVertical: 10, paddingHorizontal: 20 }}>
+                  <Text style={{ color: '#fff' }}>Update</Text>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+          </TouchableWithoutFeedback>
+        </ModalContent>
+      </Modal>
     </View>
   );
 };
@@ -475,7 +762,7 @@ const styles = StyleSheet.create({
 
   dropDownplaceholder: {
     fontSize: WP(2),
-    marginLeft: WP(2)
+    marginLeft: WP(2),
   },
   dropDownLable: {
     fontSize: WP(2),
@@ -495,8 +782,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   dropDownContainerStyle: {
-    height: WP(5),
-    width: WP(20)
+    height: WP(8),
+    width: WP(20),
   },
   mainDropDown: {
     backgroundColor: '#fff',
@@ -511,6 +798,13 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     elevation: 5,
     height: WP(4)
+  },
+
+
+  modalDropDown: {
+    backgroundColor: '#fff',
+    height: WP(4),
+    marginBottom: 10
   },
 });
 export default Home;
