@@ -101,6 +101,19 @@ const Home = () => {
       }
     })
   }
+  const getCheckInOut = (token, data, key) => {
+    ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
+      console.log("Response"+key,response)
+      if(response)
+      {
+        response.errors[0]=="Error getting old entry!"
+        AsyncStorage.removeItem(key)
+        getChildren(token)
+      } else {
+        console.log("Keep Data on hold for " + key)
+      }
+    })
+  }
 
   fetchData = async () => {
     let data = {
@@ -113,17 +126,52 @@ const Home = () => {
     let classes = await AsyncStorage.getItem("classes")
     let Login = await AsyncStorage.getItem("Login")
     let checkInCheckOutDataForUploading = await AsyncStorage.getItem("roll_call_array")
+    let updateForUploading = await AsyncStorage.getItem("roll_call_array_update")
+    let deleteForUploading = await AsyncStorage.getItem("roll_call_array_delete")
+    let params = {
+      type: "updateentry",
+      entries: []
+    }
+    updateForUploading = JSON.parse(updateForUploading);
+    console.log("updateEntry", updateForUploading)
+    if (updateForUploading != null) {
+
+      updateForUploading.forEach(element => {
+        params.entries.push(element)
+      });
+      console.log("updateEntry", params)
+      await getCheckInOut(token, params, "roll_call_array_update")
+    }
+
+
+    let deleteParams = {
+      type: "removeentry",
+      entries: []
+    }
+    deleteForUploading = JSON.parse(deleteForUploading);
+    console.log("deleteEntry", deleteForUploading)
+    if (deleteForUploading != null) {
+      deleteForUploading.forEach(element => {
+        deleteParams.entries.push(element)
+      });
+      // deleteParams.entries=updateForUploading;
+      console.log("deleteEntry", deleteParams)
+
+      await getCheckInOut(token, deleteParams, "roll_call_array_delete")
+    }
+
+
+
+
+    console.log("checkInCheckOut", checkInCheckOutDataForUploading)
     checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
     if (checkInCheckOutDataForUploading != null) {
       checkInCheckOutDataForUploading.forEach(element => {
         data.data.push(element)
       });
-      ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
-        if (isSuccess) {
-          AsyncStorage.removeItem("roll_call_array")
-          checkInCheckOutDataForUploading = null;
-        }
-      })
+      //data.data=checkInCheckOutDataForUploading;
+
+      await getCheckInOut(token, data, "roll_call_array")
     }
 
 
@@ -157,10 +205,11 @@ const Home = () => {
 
     setToken(token)
     if (token) {
+      await getChildren(token)
       await getClasses(token)
       await getBusses(token)
-      if (checkInCheckOutDataForUploading == null)
-        await getChildren(token)
+
+
 
 
 
@@ -192,6 +241,75 @@ const Home = () => {
 
   }
 
+  const filterChild = async () => {
+    let allChildren = await AsyncStorage.getItem("childsdata")
+
+    allChildren=JSON.parse(allChildren)
+
+
+    allChildren = allChildren.sort(function (a, b) {
+      if (sortByValue == 1) {
+        if (a.fname < b.fname) { return -1; }
+        if (a.fname > b.fname) { return 1; }
+      } else {
+        if (a.lname < b.lname) { return -1; }
+        if (a.lname > b.lname) { return 1; }
+      }
+      return 0;
+    })
+
+    console.log("Sort Children",JSON.stringify(allChildren));
+    console.log("NAP",nap)
+    allChildren = allChildren.filter((obj) =>
+    { 
+      let napFilter,finalFilter,BusFilter,bussingSchoolFilter,ClassesFilter;
+      if(!nap)
+      {
+        napFilter=obj.grade!='5';
+      }else
+      {
+        napFilter=true;
+      }
+
+      if(!bus)
+      {
+        BusFilter=obj.grade=='5';
+      }else
+      {
+        BusFilter=true;
+      }
+      if(!final)
+      {
+        finalFilter=obj.roll_calls[obj.roll_calls.length-1].direction=="in"||obj.roll_calls[obj.roll_calls.length-1].direction=="nap";
+      }else
+      {
+        finalFilter=true;
+      }
+      if(selectedBus!=0)
+      {
+        console.log("SelectedBus",busList[selectedBus].value)
+        bussingSchoolFilter=obj.bus==busList[selectedBus].value
+      }else
+      {
+
+      bussingSchoolFilter=true;
+      }
+
+
+      console.log("napFilter"+napFilter)
+      console.log("BusFilter"+BusFilter)
+      console.log("bussingSchoolFilter"+bussingSchoolFilter)
+      console.log("BusFilter"+BusFilter)
+
+
+      return napFilter&&finalFilter&&BusFilter&&bussingSchoolFilter;
+    })
+    console.log("Filtered Children",JSON.stringify(allChildren));
+
+    setChildren(allChildren)
+
+  }
+
   const updateEntry = async () => {
     let allChildren = [...children]
     let arr = allChildren[selectedItem.index].roll_calls
@@ -217,9 +335,46 @@ const Home = () => {
         + " " +
         ampm
     }
+    let checkInCheckOutDataForUploading = await AsyncStorage.getItem("roll_call_array")
+    console.log("checkInCheckOut", checkInCheckOutDataForUploading)
+    checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
+    if (checkInCheckOutDataForUploading != null)  //its means there are some entries check if user is not editing this.
+    {
+      console.log("selectedItem.id", selectedItem.id)
+      console.log(checkInCheckOutDataForUploading[0].id)
+      console.log(moment(checkInCheckOutDataForUploading[0].timestamp, 'h:mm:ss A"').valueOf())
+      var checkUpdateEntryIndex = checkInCheckOutDataForUploading.findIndex(x => x.id == selectedItem.id);
+      console.log("checkUpdateEntryIndex", checkUpdateEntryIndex)
+      //  //2022-03-03T11:35:50.323Z
+      //   const myArray = checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp.split("T");
+      //   //myarray[0]=2022-03-03
+      //   //myarray[1]=11:35:50.323Z
+      //   const timeArray=myArray[myArray.length-1].split(":")
+      //   //timeArray[0]=11
+      //   //timeArray[0]=11
+      //   //timeArray[0]=11
+      if (checkUpdateEntryIndex != -1) {
+        checkInCheckOutDataForUploading[checkUpdateEntryIndex].action = direction;
+
+
+        AsyncStorage.setItem("roll_call_array", JSON.stringify(checkInCheckOutDataForUploading))
+
+        allChildren[selectedItem.index].roll_calls = arr
+        // console.log(allChildren[selectedItem.index].roll_calls)
+        setChildren(allChildren)
+        setVisible(false)
+        return;
+      }
+
+    }
+
+
+
+
     allChildren[selectedItem.index].roll_calls = arr
     // console.log(allChildren[selectedItem.index].roll_calls)
     setChildren(allChildren)
+    AsyncStorage.setItem("childsdata", JSON.stringify(allChildren))
 
     let previousArray = await AsyncStorage.getItem("roll_call_array_update")
     let currentEntry = {
@@ -245,10 +400,16 @@ const Home = () => {
       if (state.isConnected) {
         console.log("PARAMS", params)
         ApiServices.checkInOut(token, params, ({ isSuccess, response }) => {
-          console.log("Response", response)
-          AsyncStorage.removeItem("roll_call_array_update")
+          if (isSuccess) {
+            console.log("Response", response)
+            AsyncStorage.removeItem("roll_call_array_update")
+            getChildren(token)
+          } else {
+            AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
+          }
         })
       } else {
+        console.log("PARAMSPUT", params)
         AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
       }
     });
@@ -257,32 +418,71 @@ const Home = () => {
 
   }
 
-  const deleteEntry = async(item) => {
-
+  const deleteEntry = async (item) => {
     let allChildren = [...children]
     let arr = allChildren[selectedItem.index].roll_calls
     var foundIndex = arr.findIndex(x => x.id == selectedItem.id);
-  let previousArray = await AsyncStorage.getItem("roll_call_array_delete")
-  
-  let entries = previousArray !== null ? previousArray : []
-  
-  arr.splice(foundIndex, 1)
-  entries.push({
-    entry : selectedItem.id
-  })
+    let checkInCheckOutDataForUploading = await AsyncStorage.getItem("roll_call_array")
+    console.log("checkInCheckOut", checkInCheckOutDataForUploading)
+    checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
+    if (checkInCheckOutDataForUploading != null)  //its means there are some entries check if user is not editing this.
+    {
+      var checkUpdateEntryIndex = checkInCheckOutDataForUploading.findIndex(x => x.id == selectedItem.id);
+      console.log("checkRemoveEntryIndex", checkUpdateEntryIndex)
+      //  //2022-03-03T11:35:50.323Z
+      //   const myArray = checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp.split("T");
+      //   //myarray[0]=2022-03-03
+      //   //myarray[1]=11:35:50.323Z
+      //   const timeArray=myArray[myArray.length-1].split(":")
+      //   //timeArray[0]=11
+      //   //timeArray[0]=11
+      //   //timeArray[0]=11
+      if (checkUpdateEntryIndex != -1) {
+        checkInCheckOutDataForUploading.splice(checkUpdateEntryIndex, 1)
+        console.log(JSON.stringify(checkInCheckOutDataForUploading))
+        AsyncStorage.setItem("roll_call_array", JSON.stringify(checkInCheckOutDataForUploading))
+        console.log("Items", JSON.stringify(arr))
+        console.log("ItemsIndex", foundIndex)
+        arr.splice(foundIndex, 1)
+        allChildren[selectedItem.index].roll_calls = arr
+        // console.log(allChildren[selectedItem.index].roll_calls)
+        setChildren(allChildren)
+        setVisible(false)
+        return;
+      }
 
-  let params  = {
-    type : "removeentry",
-    entries : entries
-  }
+    }
+
+
+    let previousArray = await AsyncStorage.getItem("roll_call_array_delete")
+
+    let entries = previousArray !== null ? JSON.parse(previousArray) : []
+
+    arr.splice(foundIndex, 1)
+    entries.push({
+      entry: selectedItem.id
+    })
+
+    let params = {
+      type: "removeentry",
+      entries: entries
+    }
+    allChildren[selectedItem.index].roll_calls = arr
+    AsyncStorage.setItem("childsdata", JSON.stringify(allChildren))
     NetInfo.fetch().then(state => {
       if (state.isConnected) {
         console.log("PARAMS", params)
         ApiServices.checkInOut(token, params, ({ isSuccess, response }) => {
-          console.log("Response", response)
-          AsyncStorage.removeItem("roll_call_array_delete")
+          if (isSuccess) {
+            console.log("Response", response)
+            AsyncStorage.removeItem("roll_call_array_delete")
+            getChildren(token)
+          } else {
+            AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
+          }
         })
       } else {
+        console.log("PARAMSDelete", JSON.stringify(entries))
         AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
       }
     });
@@ -302,8 +502,6 @@ const Home = () => {
     let locallySavedArray = await AsyncStorage.getItem("roll_call_array")
     locallySavedArray = JSON.parse(locallySavedArray)
 
-
-
     if (locallySavedArray != null) {
       locallySavedArray.forEach(element => {
         data.data.push(element)
@@ -322,14 +520,15 @@ const Home = () => {
         action: arr[index].roll_calls[arr[index].roll_calls.length - 1].direction !== 'out' ? 'out' : nap ? 'nap' : 'in',
         child: arr[index].id,
         nap: nap ? 1 : 0,
-        timestamp: new Date()
+        timestamp: new Date(),
+        id: moment(new Date(), 'h:mm:ss A"').valueOf()
       })
     }
 
 
     let forLocalArray = {
       direction: data.data[data.data.length - 1].action,
-      id: moment(data.data[data.data.length - 1].timestamp, 'h:mm:ss A"').valueOf(),
+      id: data.data[data.data.length - 1].id,
       time: moment(data.data[data.data.length - 1].timestamp).format('h:mm:ss A')
     }
     arr[index].roll_calls.push(forLocalArray)
@@ -339,7 +538,14 @@ const Home = () => {
         console.log("PARAMS", data)
         ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
           console.log("Response", response)
-          AsyncStorage.removeItem("roll_call_array")
+          if (isSuccess) {
+            AsyncStorage.removeItem("roll_call_array")
+            console.log("Data is Removing")
+            getChildren(token)
+          } else {
+            AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
+            console.log("Keeps the data on hold")
+          }
         })
       } else {
         AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
@@ -378,6 +584,7 @@ const Home = () => {
                 showArrow={true}
                 onChangeItem={(item) => {
                   setSortByValue(item.key)
+                  filterChild();
                 }}
                 defaultValue={0}
                 selectedLabelStyle={{ color: AppColor.black }}
@@ -386,7 +593,7 @@ const Home = () => {
                 labelStyle={styles.dropDownLable}
                 itemStyle={styles.dropDownItem}
                 dropDownStyle={styles.dropDown}
-                textStyle={{color : 'red'}}
+                textStyle={{ color: 'red' }}
                 activeLabelStyle={styles.dropDownActiveLable}
                 style={styles.mainDropDown}
                 dropDownMaxHeight={WP(40)}
@@ -400,6 +607,7 @@ const Home = () => {
                 arrowSize={WP(2)}
                 showArrow={true}
                 onChangeItem={(item) => {
+                  filterChild()
                   setSortByValue(item.key)
                 }}
                 selectedLabelStyle={{ color: AppColor.black }}
@@ -424,6 +632,7 @@ const Home = () => {
                   showArrow={true}
                   onChangeItem={(item) => {
                     setSortByValue(item.key)
+                    filterChild()
                   }}
                   selectedLabelStyle={{ color: AppColor.black }}
                   containerStyle={styles.dropDownContainerStyle}
@@ -442,7 +651,9 @@ const Home = () => {
               title={"Final"}
               checked={final}
               checkedColor={AppColor.purple}
-              onPress={() => { setFinal(!final) }}
+              onPress={() => { setFinal(!final) 
+                filterChild()
+              }}
               containerStyle={styles.checkBoxContainerStyle}
               wrapperStyle={styles.checkBoxWrapperStyle}
               textStyle={styles.checkBoxTextStyle}
@@ -452,7 +663,11 @@ const Home = () => {
               title={"Nap"}
               checked={nap}
               checkedColor={AppColor.purple}
-              onPress={() => { setNap(!nap) }}
+              onPress={() => { 
+                setNap(!nap) 
+                filterChild();
+              
+              }}
               containerStyle={styles.checkBoxContainerStyle}
               wrapperStyle={styles.checkBoxWrapperStyle}
               textStyle={styles.checkBoxTextStyle}
@@ -462,7 +677,9 @@ const Home = () => {
               title={"Bus"}
               checked={bus}
               checkedColor={AppColor.purple}
-              onPress={() => { setBus(!bus) }}
+              onPress={() => { setBus(!bus) 
+                filterChild()
+              }}
               containerStyle={styles.checkBoxContainerStyle}
               wrapperStyle={styles.checkBoxWrapperStyle}
               textStyle={styles.checkBoxTextStyle}
@@ -632,8 +849,8 @@ const Home = () => {
                 />
               </View>
               <View style={{ flexDirection: 'row' }}>
-                <TouchableOpacity onPress={()=> deleteEntry()}
-                style={{ backgroundColor: 'red', borderWidth: 0.4, borderColor: '#000', paddingVertical: 10, paddingHorizontal: 20 }}>
+                <TouchableOpacity onPress={() => deleteEntry()}
+                  style={{ backgroundColor: 'red', borderWidth: 0.4, borderColor: '#000', paddingVertical: 10, paddingHorizontal: 20 }}>
                   <Text style={{ color: '#fff' }}>Delete</Text>
                 </TouchableOpacity>
 
