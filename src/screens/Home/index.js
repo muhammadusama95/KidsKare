@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   FlatList,
@@ -32,6 +32,8 @@ const Home = () => {
   const [sortBy, setSortByList] = useState([{ label: 'First Name', key: 0, value: 0 }, { label: 'Last Name', key: 1, value: 1 }])
   const [classes, setClasses] = useState([])
   const [busList, setBusList] = useState([])
+  const [sortByClass, setSortByClass] = useState(0)
+  const [sortByName, setSortByName] = useState(0)
   const [sortByValue, setSortByValue] = useState(0)
   const [selectedClass, setSelectedClass] = useState(0)
   const [selectedBus, setSelectedBus] = useState(0)
@@ -49,11 +51,9 @@ const Home = () => {
   const dropDown3 = React.useRef();
   const dropDown4 = React.useRef();
   const dropDown5 = React.useRef();
+  const mainArray = useRef([]);
 
 
-  useEffect(() => {
-
-  }, [])
   const getClasses = (token) => {
     ApiServices.getClasses(token, ({ isSuccess, response }) => {
       if (isSuccess) {
@@ -94,6 +94,8 @@ const Home = () => {
     ApiServices.getChildren(token, ({ isSuccess, response }) => {
       if (isSuccess) {
         AsyncStorage.setItem("childsdata", JSON.stringify(response));
+        mainArray.current = []
+        mainArray.current = response
         setChildren(response)
       } else {
 
@@ -103,10 +105,9 @@ const Home = () => {
   }
   const getCheckInOut = (token, data, key) => {
     ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
-      console.log("Response"+key,response)
-      if(response)
-      {
-        response.errors[0]=="Error getting old entry!"
+      console.log("Response" + key, response)
+      if (response) {
+        response.errors[0] == "Error getting old entry!"
         AsyncStorage.removeItem(key)
         getChildren(token)
       } else {
@@ -188,6 +189,7 @@ const Home = () => {
 
     if (childArray != null) {
       childArray = JSON.parse(childArray)
+      mainArray.current = childArray
       setChildren(childArray);
     }
 
@@ -241,14 +243,60 @@ const Home = () => {
 
   }
 
+  useEffect(() => {
+    filterChild()
+  }, [bus, final,nap,sortByClass,sortByName,sortByValue])
+
+
   const filterChild = async () => {
-    let allChildren = await AsyncStorage.getItem("childsdata")
+    let allChildren = []
 
-    allChildren=JSON.parse(allChildren)
+    // allChildren=JSON.parse(allChildren)
 
+
+
+    for (let i = 0; i < mainArray.current.length; i++) {
+      if (final) {
+        if (mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "nap" || mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "in") {
+          allChildren.push(mainArray.current[i])
+        }
+      }
+      if (nap){
+        if (mainArray.current[i].grade !== 5) {
+          allChildren.push(mainArray.current[i])
+        }
+      }
+      if (bus){
+        if (mainArray.current[i].grade === 5) {
+          if (sortByValue === 0 ){
+            allChildren.push(mainArray.current[i])
+          }else{
+            if (mainArray.current[i].bus === sortByValue){
+              allChildren.push(mainArray.current[i])
+            }
+          }
+        }
+      }
+      if (sortByClass!==0){
+        if (sortByClass === 'Todd'&&mainArray.current[i].grade === 1) {
+          allChildren.push(mainArray.current[i])
+        }
+        else if (sortByClass === 'PS'&&mainArray.current[i].grade === 2) {
+          allChildren.push(mainArray.current[i])
+        }
+        else if (sortByClass === 'GS'&&(mainArray.current[i].class === 9 ||mainArray.current[i].class === 10)) {
+          allChildren.push(mainArray.current[i])
+        }
+      }
+      if (sortByClass==0&&sortByValue==0&&!nap&&!bus&&!final){
+        allChildren.push(mainArray.current[i])
+      }
+    }
+
+    
 
     allChildren = allChildren.sort(function (a, b) {
-      if (sortByValue == 1) {
+      if (sortByName == 1) {
         if (a.fname < b.fname) { return -1; }
         if (a.fname > b.fname) { return 1; }
       } else {
@@ -258,56 +306,13 @@ const Home = () => {
       return 0;
     })
 
-    console.log("Sort Children",JSON.stringify(allChildren));
-    console.log("NAP",nap)
-    allChildren = allChildren.filter((obj) =>
-    { 
-      let napFilter,finalFilter,BusFilter,bussingSchoolFilter,ClassesFilter;
-      if(!nap)
-      {
-        napFilter=obj.grade!='5';
-      }else
-      {
-        napFilter=true;
-      }
-
-      if(!bus)
-      {
-        BusFilter=obj.grade=='5';
-      }else
-      {
-        BusFilter=true;
-      }
-      if(!final)
-      {
-        finalFilter=obj.roll_calls[obj.roll_calls.length-1].direction=="in"||obj.roll_calls[obj.roll_calls.length-1].direction=="nap";
-      }else
-      {
-        finalFilter=true;
-      }
-      if(selectedBus!=0)
-      {
-        console.log("SelectedBus",busList[selectedBus].value)
-        bussingSchoolFilter=obj.bus==busList[selectedBus].value
-      }else
-      {
-
-      bussingSchoolFilter=true;
-      }
-
-
-      console.log("napFilter"+napFilter)
-      console.log("BusFilter"+BusFilter)
-      console.log("bussingSchoolFilter"+bussingSchoolFilter)
-      console.log("BusFilter"+BusFilter)
-
-
-      return napFilter&&finalFilter&&BusFilter&&bussingSchoolFilter;
-    })
-    console.log("Filtered Children",JSON.stringify(allChildren));
-
     setChildren(allChildren)
 
+  }
+
+  const checkFinal = (item) => {
+    console.log("ITEM", item)
+    return item.fname === "Kid1";
   }
 
   const updateEntry = async () => {
@@ -575,7 +580,7 @@ const Home = () => {
         </View>
         <View style={styles.right_bar}>
           <View>
-            <View style={styles.dropDownViews}>
+            <View style={styles.dropDownView1}>
               <Text style={{ fontSize: WP(2) }}>Sort By:</Text>
               <DropDownPicker
                 items={sortBy}
@@ -583,8 +588,7 @@ const Home = () => {
                 arrowSize={WP(2)}
                 showArrow={true}
                 onChangeItem={(item) => {
-                  setSortByValue(item.key)
-                  filterChild();
+                  setSortByName(item.key)
                 }}
                 defaultValue={0}
                 selectedLabelStyle={{ color: AppColor.black }}
@@ -599,7 +603,7 @@ const Home = () => {
                 dropDownMaxHeight={WP(40)}
               />
             </View>
-            <View style={styles.dropDownViews}>
+            <View style={styles.dropDownView2}>
               <Text style={{ fontSize: WP(2) }}>Class:</Text>
               <DropDownPicker
                 items={classes}
@@ -607,8 +611,7 @@ const Home = () => {
                 arrowSize={WP(2)}
                 showArrow={true}
                 onChangeItem={(item) => {
-                  filterChild()
-                  setSortByValue(item.key)
+                  setSortByClass(item.key)
                 }}
                 selectedLabelStyle={{ color: AppColor.black }}
                 containerStyle={styles.dropDownContainerStyle}
@@ -622,7 +625,7 @@ const Home = () => {
               />
             </View>
             {bus ?
-              <View style={styles.dropDownViews}>
+              <View style={styles.dropDownView3}>
                 <Text style={{ fontSize: WP(2) }}>Bussing School:</Text>
                 <DropDownPicker
                   items={busList}
@@ -632,7 +635,6 @@ const Home = () => {
                   showArrow={true}
                   onChangeItem={(item) => {
                     setSortByValue(item.key)
-                    filterChild()
                   }}
                   selectedLabelStyle={{ color: AppColor.black }}
                   containerStyle={styles.dropDownContainerStyle}
@@ -651,8 +653,9 @@ const Home = () => {
               title={"Final"}
               checked={final}
               checkedColor={AppColor.purple}
-              onPress={() => { setFinal(!final) 
-                filterChild()
+              onPress={() => {
+                setFinal(!final)
+                // filterChild()
               }}
               containerStyle={styles.checkBoxContainerStyle}
               wrapperStyle={styles.checkBoxWrapperStyle}
@@ -663,10 +666,10 @@ const Home = () => {
               title={"Nap"}
               checked={nap}
               checkedColor={AppColor.purple}
-              onPress={() => { 
-                setNap(!nap) 
-                filterChild();
-              
+              onPress={() => {
+                setNap(!nap)
+                // filterChild();
+
               }}
               containerStyle={styles.checkBoxContainerStyle}
               wrapperStyle={styles.checkBoxWrapperStyle}
@@ -677,8 +680,9 @@ const Home = () => {
               title={"Bus"}
               checked={bus}
               checkedColor={AppColor.purple}
-              onPress={() => { setBus(!bus) 
-                filterChild()
+              onPress={() => {
+                setBus(!bus)
+                // filterChild()
               }}
               containerStyle={styles.checkBoxContainerStyle}
               wrapperStyle={styles.checkBoxWrapperStyle}
@@ -968,13 +972,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  dropDownViews: {
+  dropDownView1: {
     flexDirection: 'row',
     zIndex: 20,
     alignItems: 'center',
     marginBottom: WP(1),
     width: WP(35),
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    zIndex: 3000
+  },
+
+  dropDownView2: {
+    flexDirection: 'row',
+    zIndex: 20,
+    alignItems: 'center',
+    marginBottom: WP(1),
+    width: WP(35),
+    justifyContent: 'space-between',
+    zIndex: 2000
+  },
+
+  dropDownView3: {
+    flexDirection: 'row',
+    zIndex: 20,
+    alignItems: 'center',
+    marginBottom: WP(1),
+    width: WP(35),
+    justifyContent: 'space-between',
+    zIndex: 1000
   },
 
   dropDownplaceholder: {
