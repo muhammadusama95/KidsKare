@@ -58,6 +58,12 @@ const Home = () => {
     ApiServices.getClasses(token, ({ isSuccess, response }) => {
       if (isSuccess) {
         let arrayios = []
+        let allClasses={
+            label: "All Classes",
+             key: "ac", 
+             value: "ac"
+        }
+        arrayios.push(allClasses)
         response?.map((item) => {
           label = item.name;
           value = item.id;
@@ -93,10 +99,12 @@ const Home = () => {
 
     ApiServices.getChildren(token, ({ isSuccess, response }) => {
       if (isSuccess) {
+        console.log(JSON.stringify(response))
         AsyncStorage.setItem("childsdata", JSON.stringify(response));
         mainArray.current = []
         mainArray.current = response
         setChildren(response)
+        filterChild()
       } else {
 
         //alert(response)
@@ -195,13 +203,14 @@ const Home = () => {
 
 
 
-
+    // busses = JSON.parse(busses)
     // if (busses != null) {
-    //   busses = JSON.parse(busses)
+      
     //   setBusList(busses);
     // }
+    // classes = JSON.parse(classes)
     // if (classes != null) {
-    //   classes = JSON.parse(classes)
+      
     //   setClasses(childArray);
     // }
 
@@ -265,10 +274,10 @@ const Home = () => {
         if (mainArray.current[i].grade !== 5) {
           allChildren.push(mainArray.current[i])
         }
-      }
-      if (bus){
+      }else if (bus){
+
         if (mainArray.current[i].grade === 5) {
-          if (sortByValue === 0 ){
+          if (sortByValue === 0 ||sortByValue===""||sortByValue==='C'){
             allChildren.push(mainArray.current[i])
           }else{
             if (mainArray.current[i].bus === sortByValue){
@@ -278,6 +287,7 @@ const Home = () => {
         }
       }
       if (sortByClass!==0){
+       
         if (sortByClass === 'Todd'&&mainArray.current[i].grade === 1) {
           allChildren.push(mainArray.current[i])
         }
@@ -286,9 +296,12 @@ const Home = () => {
         }
         else if (sortByClass === 'GS'&&(mainArray.current[i].class === 9 ||mainArray.current[i].class === 10)) {
           allChildren.push(mainArray.current[i])
+        }else if(sortByClass==mainArray.current[i].class)
+        {
+          allChildren.push(mainArray.current[i])
         }
       }
-      if (sortByClass==0&&sortByValue==0&&!nap&&!bus&&!final){
+      if ((sortByClass === "ac"||sortByClass==0)&&(sortByValue==0)&&!nap&&!bus&&!final){
         allChildren.push(mainArray.current[i])
       }
     }
@@ -667,7 +680,12 @@ const Home = () => {
               checked={nap}
               checkedColor={AppColor.purple}
               onPress={() => {
+
                 setNap(!nap)
+                if(bus)
+                {
+                  setBus(!bus)
+                }
                 // filterChild();
 
               }}
@@ -682,6 +700,10 @@ const Home = () => {
               checkedColor={AppColor.purple}
               onPress={() => {
                 setBus(!bus)
+                if(nap)
+                {
+                  setNap(!nap)
+                }
                 // filterChild()
               }}
               containerStyle={styles.checkBoxContainerStyle}
@@ -698,7 +720,7 @@ const Home = () => {
           renderItem={({ item, index }) => {
             return (
               <View style={[styles.enrollItem, { backgroundColor: index % 2 == 0 ? AppColor.lightGrey : 'white' }]}>
-                <TouchableOpacity style={[styles.width40, { backgroundColor: item.selected ? 'green' : 'black' }]} onPress={() => onPress(item, index)}>
+                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls[item.roll_calls.length-1].direction =='out'? 'black' : 'green' }]} onPress={() => onPress(item, index)}>
                   <View style={styles.btn_enroll}>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.fname + " " + item.lname}</Text>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.enrollment_display}</Text>
