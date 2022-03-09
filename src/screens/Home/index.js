@@ -114,8 +114,8 @@ const Home = () => {
   const getCheckInOut = (token, data, key) => {
     ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
       console.log("Response" + key, response)
-      if (response) {
-        response.errors[0] == "Error getting old entry!"
+      if (isSuccess) {
+       // response.errors[0] == "Error getting old entry!"
         AsyncStorage.removeItem(key)
         getChildren(token)
       } else {
@@ -203,16 +203,27 @@ const Home = () => {
 
 
 
-    // busses = JSON.parse(busses)
-    // if (busses != null) {
+    busses = JSON.parse(busses)
+    let arrayiosbusses=[]
+    if (busses != null) {
       
-    //   setBusList(busses);
-    // }
-    // classes = JSON.parse(classes)
-    // if (classes != null) {
-      
-    //   setClasses(childArray);
-    // }
+      busses?.map((item) => {
+        label = item.label;
+        value = item.key;
+        arrayiosbusses.push({ label: label, key: value, value: value });
+      })
+      setBusList(arrayiosbusses);
+    }
+    classes = JSON.parse(classes)
+    let arrayiosclasses=[]
+    if (classes != null) {
+      classes?.map((item) => {
+        label = item.label;
+        value = item.key;
+        arrayiosclasses.push({ label: label, key: value, value: value });
+      })
+      setClasses(arrayiosclasses);
+    }
 
     setToken(token)
     if (token) {
@@ -327,6 +338,12 @@ const Home = () => {
     console.log("ITEM", item)
     return item.fname === "Kid1";
   }
+  // useEffect(()=>{
+   
+  //   console.log("Time ",aas)
+    
+
+  // },[])
 
   const updateEntry = async () => {
     let allChildren = [...children]
@@ -342,6 +359,7 @@ const Home = () => {
     let secs = modalSec < 10 ? "0" + modalSec : modalSec
 
     console.log(minute)
+
     arr[foundIndex] = {
       id: selectedItem.id,
       direction: direction,
@@ -353,28 +371,53 @@ const Home = () => {
         + " " +
         ampm
     }
+
     let checkInCheckOutDataForUploading = await AsyncStorage.getItem("roll_call_array")
     console.log("checkInCheckOut", checkInCheckOutDataForUploading)
     checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
     if (checkInCheckOutDataForUploading != null)  //its means there are some entries check if user is not editing this.
     {
-      console.log("selectedItem.id", selectedItem.id)
-      console.log(checkInCheckOutDataForUploading[0].id)
-      console.log(moment(checkInCheckOutDataForUploading[0].timestamp, 'h:mm:ss A"').valueOf())
+
+      
+
+      // console.log("selectedItem.id", selectedItem.id)
+      // console.log(checkInCheckOutDataForUploading[0].id)
+      // console.log(moment(checkInCheckOutDataForUploading[0].timestamp, 'h:mm:ss A"').valueOf())
       var checkUpdateEntryIndex = checkInCheckOutDataForUploading.findIndex(x => x.id == selectedItem.id);
       console.log("checkUpdateEntryIndex", checkUpdateEntryIndex)
-      //  //2022-03-03T11:35:50.323Z
-      //   const myArray = checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp.split("T");
-      //   //myarray[0]=2022-03-03
+
+    
+      //  //2022-03-13T11:35:50.323Z
+      // 
+      // time: 12  + ':' +    20       + ":" +       20       + " " +       pm
+
+      
       //   //myarray[1]=11:35:50.323Z
       //   const timeArray=myArray[myArray.length-1].split(":")
       //   //timeArray[0]=11
       //   //timeArray[0]=11
       //   //timeArray[0]=11
       if (checkUpdateEntryIndex != -1) {
+      //   hour=hour+5;
+
+      //   if(hour>=12)
+      // {
+      //   hour=hour%12
+      //   ampm=ampm==="AM"?"PM":"AM"
+      // }
+        let time= hour + ':' +minute+ ":" +secs+ " " +ampm
+        console.log("IndexValue",JSON.stringify(checkInCheckOutDataForUploading[checkUpdateEntryIndex]))
+        console.log("TIMESTAMP",checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp)
+        const myArray = checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp.split("T");
+        time=+myArray[0]+" "+time;
+        let aas= moment(time,"YYYY-MM-DD hh:mm:ss A")
+        if(aas)
+        {
+          checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp = aas;
+        }
+        console.log("TIMESTAMPAFTER__TIME",time)
         checkInCheckOutDataForUploading[checkUpdateEntryIndex].action = direction;
-
-
+      
         AsyncStorage.setItem("roll_call_array", JSON.stringify(checkInCheckOutDataForUploading))
 
         allChildren[selectedItem.index].roll_calls = arr
@@ -547,7 +590,7 @@ const Home = () => {
     let forLocalArray = {
       direction: data.data[data.data.length - 1].action,
       id: data.data[data.data.length - 1].id,
-      time: moment(data.data[data.data.length - 1].timestamp).format('h:mm:ss A')
+      time: moment(data.data[data.data.length - 1].timestamp).format('h:mm:ss A'),
     }
     arr[index].roll_calls.push(forLocalArray)
 
@@ -720,7 +763,7 @@ const Home = () => {
           renderItem={({ item, index }) => {
             return (
               <View style={[styles.enrollItem, { backgroundColor: index % 2 == 0 ? AppColor.lightGrey : 'white' }]}>
-                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls[item.roll_calls.length-1].direction =='out'? 'black' : 'green' }]} onPress={() => onPress(item, index)}>
+                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls.length>=1?item.roll_calls[item.roll_calls.length-1].direction =='out'? 'black' : 'green':'black' }]} onPress={() => onPress(item, index)}>
                   <View style={styles.btn_enroll}>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.fname + " " + item.lname}</Text>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.enrollment_display}</Text>
@@ -746,7 +789,7 @@ const Home = () => {
                       </TouchableOpacity>
                     )
                   }}
-                  numColumns={3}
+                  numColumns={2}
                   keyExtractor={(item, index) => index}
                 />
               </View>
@@ -919,6 +962,7 @@ const styles = StyleSheet.create({
   rowDirection: {
     flexDirection: 'row',
     borderBottomWidth: 3,
+    marginTop:WP(10),
     zIndex: 10,
     justifyContent: 'space-between'
   },

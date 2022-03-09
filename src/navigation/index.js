@@ -16,7 +16,7 @@ const Router = () => {
         />
 
         <Stack.Screen
-          options={{ headerShown: true, headerBackVisible: false }}
+          options={{ headerShown: false, headerBackVisible: false }}
           name='Home'
           component={Screens.Home}
         />
