@@ -777,10 +777,9 @@ const Home = () => {
                 <DropDownPicker
                   items={hours}
                   defaultValue={modalHour}
-                  dropDownStyle={{ height: 10 }}
+                  dropDownStyle={{ height: 10,backgroundColor: '#fafafa' }}
                   containerStyle={{ height: 40, width: WP(17) }}
-                  style={{ backgroundColor: '#fafafa', }}
-                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  style={{ backgroundColor: '#fafafa'}}
                   dropDownMaxHeight={WP(25)}
                   controller={(instance) => dropDown1.current = instance}
                   onOpen={() => {
