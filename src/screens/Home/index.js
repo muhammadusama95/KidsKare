@@ -51,17 +51,43 @@ const Home = () => {
   const dropDown3 = React.useRef();
   const dropDown4 = React.useRef();
   const dropDown5 = React.useRef();
+  const interval = useRef(null)
   const mainArray = useRef([]);
+
+
+  useEffect(() => {
+    interval.current = setInterval(() => {
+      fetchData()
+
+      //Yeh wala function tha jo ghalat response deta tha. Agar check karna to isay uncomment ker le or wifi off ker ke
+      //On ker. Result mil jaye ga.  
+
+      //   NetInfo.fetch().then(state => {
+      //     // alert(state.isConnected)
+      //     setConnected(state.isConnected)
+      //   })
+    }, 60000);
+
+  }, [])
+
+  useEffect(() => {
+
+    return () => {
+      console.log("CLEARED")
+      clearInterval(interval.current)
+      
+    }
+  }, [])
 
 
   const getClasses = (token) => {
     ApiServices.getClasses(token, ({ isSuccess, response }) => {
       if (isSuccess) {
         let arrayios = []
-        let allClasses={
-            label: "All Classes",
-             key: "ac", 
-             value: "ac"
+        let allClasses = {
+          label: "All Classes",
+          key: "ac",
+          value: "ac"
         }
         arrayios.push(allClasses)
         response?.map((item) => {
@@ -76,6 +102,7 @@ const Home = () => {
       }
     })
   }
+
 
   const getBusses = (token) => {
     ApiServices.getBusses(token, ({ isSuccess, response }) => {
@@ -115,7 +142,7 @@ const Home = () => {
     ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
       console.log("Response" + key, response)
       if (isSuccess) {
-       // response.errors[0] == "Error getting old entry!"
+        // response.errors[0] == "Error getting old entry!"
         AsyncStorage.removeItem(key)
         getChildren(token)
       } else {
@@ -204,9 +231,9 @@ const Home = () => {
 
 
     busses = JSON.parse(busses)
-    let arrayiosbusses=[]
+    let arrayiosbusses = []
     if (busses != null) {
-      
+
       busses?.map((item) => {
         label = item.label;
         value = item.key;
@@ -215,7 +242,7 @@ const Home = () => {
       setBusList(arrayiosbusses);
     }
     classes = JSON.parse(classes)
-    let arrayiosclasses=[]
+    let arrayiosclasses = []
     if (classes != null) {
       classes?.map((item) => {
         label = item.label;
@@ -265,7 +292,7 @@ const Home = () => {
 
   useEffect(() => {
     filterChild()
-  }, [bus, final,nap,sortByClass,sortByName,sortByValue])
+  }, [bus, final, nap, sortByClass, sortByName, sortByValue])
 
 
   const filterChild = async () => {
@@ -281,43 +308,42 @@ const Home = () => {
           allChildren.push(mainArray.current[i])
         }
       }
-      if (nap){
+      if (nap) {
         if (mainArray.current[i].grade !== 5) {
           allChildren.push(mainArray.current[i])
         }
-      }else if (bus){
+      } else if (bus) {
 
         if (mainArray.current[i].grade === 5) {
-          if (sortByValue === 0 ||sortByValue===""||sortByValue==='C'){
+          if (sortByValue === 0 || sortByValue === "" || sortByValue === 'C') {
             allChildren.push(mainArray.current[i])
-          }else{
-            if (mainArray.current[i].bus === sortByValue){
+          } else {
+            if (mainArray.current[i].bus === sortByValue) {
               allChildren.push(mainArray.current[i])
             }
           }
         }
       }
-      if (sortByClass!==0){
-       
-        if (sortByClass === 'Todd'&&mainArray.current[i].grade === 1) {
+      if (sortByClass !== 0) {
+
+        if (sortByClass === 'Todd' && mainArray.current[i].grade === 1) {
           allChildren.push(mainArray.current[i])
         }
-        else if (sortByClass === 'PS'&&mainArray.current[i].grade === 2) {
+        else if (sortByClass === 'PS' && mainArray.current[i].grade === 2) {
           allChildren.push(mainArray.current[i])
         }
-        else if (sortByClass === 'GS'&&(mainArray.current[i].class === 9 ||mainArray.current[i].class === 10)) {
+        else if (sortByClass === 'GS' && (mainArray.current[i].class === 9 || mainArray.current[i].class === 10)) {
           allChildren.push(mainArray.current[i])
-        }else if(sortByClass==mainArray.current[i].class)
-        {
+        } else if (sortByClass == mainArray.current[i].class) {
           allChildren.push(mainArray.current[i])
         }
       }
-      if ((sortByClass === "ac"||sortByClass==0)&&(sortByValue==0)&&!nap&&!bus&&!final){
+      if ((sortByClass === "ac" || sortByClass == 0) && (sortByValue == 0) && !nap && !bus && !final) {
         allChildren.push(mainArray.current[i])
       }
     }
 
-    
+
 
     allChildren = allChildren.sort(function (a, b) {
       if (sortByName == 1) {
@@ -339,9 +365,9 @@ const Home = () => {
     return item.fname === "Kid1";
   }
   // useEffect(()=>{
-   
+
   //   console.log("Time ",aas)
-    
+
 
   // },[])
 
@@ -378,7 +404,7 @@ const Home = () => {
     if (checkInCheckOutDataForUploading != null)  //its means there are some entries check if user is not editing this.
     {
 
-      
+
 
       // console.log("selectedItem.id", selectedItem.id)
       // console.log(checkInCheckOutDataForUploading[0].id)
@@ -386,38 +412,37 @@ const Home = () => {
       var checkUpdateEntryIndex = checkInCheckOutDataForUploading.findIndex(x => x.id == selectedItem.id);
       console.log("checkUpdateEntryIndex", checkUpdateEntryIndex)
 
-    
+
       //  //2022-03-13T11:35:50.323Z
       // 
       // time: 12  + ':' +    20       + ":" +       20       + " " +       pm
 
-      
+
       //   //myarray[1]=11:35:50.323Z
       //   const timeArray=myArray[myArray.length-1].split(":")
       //   //timeArray[0]=11
       //   //timeArray[0]=11
       //   //timeArray[0]=11
       if (checkUpdateEntryIndex != -1) {
-      //   hour=hour+5;
+        //   hour=hour+5;
 
-      //   if(hour>=12)
-      // {
-      //   hour=hour%12
-      //   ampm=ampm==="AM"?"PM":"AM"
-      // }
-        let time= hour + ':' +minute+ ":" +secs+ " " +ampm
-        console.log("IndexValue",JSON.stringify(checkInCheckOutDataForUploading[checkUpdateEntryIndex]))
-        console.log("TIMESTAMP",checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp)
+        //   if(hour>=12)
+        // {
+        //   hour=hour%12
+        //   ampm=ampm==="AM"?"PM":"AM"
+        // }
+        let time = hour + ':' + minute + ":" + secs + " " + ampm
+        console.log("IndexValue", JSON.stringify(checkInCheckOutDataForUploading[checkUpdateEntryIndex]))
+        console.log("TIMESTAMP", checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp)
         const myArray = checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp.split("T");
-        time=+myArray[0]+" "+time;
-        let aas= moment(time,"YYYY-MM-DD hh:mm:ss A")
-        if(aas)
-        {
+        time = +myArray[0] + " " + time;
+        let aas = moment(time, "YYYY-MM-DD hh:mm:ss A")
+        if (aas) {
           checkInCheckOutDataForUploading[checkUpdateEntryIndex].timestamp = aas;
         }
-        console.log("TIMESTAMPAFTER__TIME",time)
+        console.log("TIMESTAMPAFTER__TIME", time)
         checkInCheckOutDataForUploading[checkUpdateEntryIndex].action = direction;
-      
+
         AsyncStorage.setItem("roll_call_array", JSON.stringify(checkInCheckOutDataForUploading))
 
         allChildren[selectedItem.index].roll_calls = arr
@@ -725,8 +750,7 @@ const Home = () => {
               onPress={() => {
 
                 setNap(!nap)
-                if(bus)
-                {
+                if (bus) {
                   setBus(!bus)
                 }
                 // filterChild();
@@ -743,8 +767,7 @@ const Home = () => {
               checkedColor={AppColor.purple}
               onPress={() => {
                 setBus(!bus)
-                if(nap)
-                {
+                if (nap) {
                   setNap(!nap)
                 }
                 // filterChild()
@@ -763,7 +786,7 @@ const Home = () => {
           renderItem={({ item, index }) => {
             return (
               <View style={[styles.enrollItem, { backgroundColor: index % 2 == 0 ? AppColor.lightGrey : 'white' }]}>
-                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls.length>=1?item.roll_calls[item.roll_calls.length-1].direction =='out'? 'black' : 'green':'black' }]} onPress={() => onPress(item, index)}>
+                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'black' : 'green' : 'black' }]} onPress={() => onPress(item, index)}>
                   <View style={styles.btn_enroll}>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.fname + " " + item.lname}</Text>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.enrollment_display}</Text>
@@ -820,9 +843,9 @@ const Home = () => {
                 <DropDownPicker
                   items={hours}
                   defaultValue={modalHour}
-                  dropDownStyle={{ height: 10,backgroundColor: '#fafafa' }}
+                  dropDownStyle={{ height: 10, backgroundColor: '#fafafa' }}
                   containerStyle={{ height: 40, width: WP(17) }}
-                  style={{ backgroundColor: '#fafafa'}}
+                  style={{ backgroundColor: '#fafafa' }}
                   dropDownMaxHeight={WP(25)}
                   controller={(instance) => dropDown1.current = instance}
                   onOpen={() => {
@@ -961,7 +984,7 @@ const styles = StyleSheet.create({
   rowDirection: {
     flexDirection: 'row',
     borderBottomWidth: 3,
-    marginTop:WP(10),
+    marginTop: WP(10),
     zIndex: 10,
     justifyContent: 'space-between'
   },
