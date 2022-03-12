@@ -57,7 +57,9 @@ const Home = () => {
 
   useEffect(() => {
     interval.current = setInterval(() => {
+      console.log("On Refreshing Data");
       fetchData()
+
 
       //Yeh wala function tha jo ghalat response deta tha. Agar check karna to isay uncomment ker le or wifi off ker ke
       //On ker. Result mil jaye ga.  
@@ -66,17 +68,17 @@ const Home = () => {
       //     // alert(state.isConnected)
       //     setConnected(state.isConnected)
       //   })
-    }, 60000);
+    }, 90000);
 
   }, [])
 
   useEffect(() => {
 
-    return () => {
-      console.log("CLEARED")
-      clearInterval(interval.current)
+    // return () => {
+    //   console.log("CLEARED")
+    //   clearInterval(interval.current)
       
-    }
+    // }
   }, [])
 
 
@@ -304,9 +306,13 @@ const Home = () => {
 
     for (let i = 0; i < mainArray.current.length; i++) {
       if (final) {
+        // console.log("TotalRollCalls",)
+        if(mainArray.current[i].roll_calls.length >= 1 )
+        {
         if (mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "nap" || mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "in") {
           allChildren.push(mainArray.current[i])
         }
+      }
       }
       if (nap) {
         if (mainArray.current[i].grade !== 5) {
@@ -736,6 +742,17 @@ const Home = () => {
               checkedColor={AppColor.purple}
               onPress={() => {
                 setFinal(!final)
+
+                if(nap)
+                {
+                  setNap(!nap)
+                }
+                if(bus)
+                {
+                  setBus(!bus)
+                }
+
+
                 // filterChild()
               }}
               containerStyle={styles.checkBoxContainerStyle}
@@ -753,6 +770,10 @@ const Home = () => {
                 if (bus) {
                   setBus(!bus)
                 }
+                if(final)
+                {
+                  setFinal(!final)
+                }
                 // filterChild();
 
               }}
@@ -769,6 +790,10 @@ const Home = () => {
                 setBus(!bus)
                 if (nap) {
                   setNap(!nap)
+                }
+                if(final)
+                {
+                  setFinal(!final)
                 }
                 // filterChild()
               }}
