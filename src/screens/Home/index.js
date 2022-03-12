@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TouchableWithoutFeedback,
+  Image
 } from 'react-native';
 import moment, { min } from 'moment'
 import { CheckBox } from 'react-native-elements';
@@ -17,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from "@react-native-community/netinfo";
 import { Modal, ModalContent } from "react-native-modals";
 import { hours, minutes, AMPM, type } from '../../helpers/Constants';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Array = ["Hello", "ANDknad", "ALDNlaskdn"]
 const Home = () => {
@@ -651,8 +653,9 @@ const Home = () => {
     fetchData()
   }, [])
 
-  return (
-    <View style={{ flex: 1 }}>
+  return (  
+    <SafeAreaView style={{ flex: 1 }}>
+      <View  style={{ flex: 1 }}>
       <View style={styles.rowDirection}>
         <View style={styles.left_bar}>
           <View style={styles.school_info}>
@@ -811,7 +814,8 @@ const Home = () => {
           renderItem={({ item, index }) => {
             return (
               <View style={[styles.enrollItem, { backgroundColor: index % 2 == 0 ? AppColor.lightGrey : 'white' }]}>
-                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'black' : 'green' : 'black' }]} onPress={() => onPress(item, index)}>
+                <TouchableOpacity style={[styles.width40, {backgroundColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'black' : 'green' : 'black' }]} onPress={() => onPress(item, index)}>
+                 <Image source={require('../../helpers/theme/icons8-clock-128.png')} style={{height:WP(5),width:WP(5),tintColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'white' : null: 'white' }} />
                   <View style={styles.btn_enroll}>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.fname + " " + item.lname}</Text>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.enrollment_display}</Text>
@@ -845,6 +849,7 @@ const Home = () => {
           }}
           keyExtractor={(item, index) => index}
         />
+        <Text style={{fontSize:WP(3),marginBottom:WP(8)}}>Headcount: {children?.length}</Text>
       </ScrollView>
 
       <Modal
@@ -986,7 +991,8 @@ const Home = () => {
           </TouchableWithoutFeedback>
         </ModalContent>
       </Modal>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -1009,7 +1015,6 @@ const styles = StyleSheet.create({
   rowDirection: {
     flexDirection: 'row',
     borderBottomWidth: 3,
-    marginTop: WP(10),
     zIndex: 10,
     justifyContent: 'space-between'
   },
@@ -1039,13 +1044,14 @@ const styles = StyleSheet.create({
   },
   width40: {
     width: WP(35),
-    justifyContent: 'center',
     borderRadius: WP(5),
     height: WP(10),
     backgroundColor: 'black',
     borderColor: 'white',
     borderWidth: 2,
-    padding: WP(2)
+    padding: WP(2),
+    alignItems:'center',
+    flexDirection:'row'
   },
   btn_enroll: {
     justifyContent: 'center',
