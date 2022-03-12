@@ -78,7 +78,6 @@ const Login = () => {
           //   defaultValue={}
           items={schools}
         //  zIndex={5}
-          //   placeholder={}
           arrowColor={AppColor.black}
           arrowSize={WP(2)}
           showArrow={true}
@@ -180,7 +179,8 @@ const styles = StyleSheet.create({
 
   dropDownplaceholder: {
     fontSize: WP(2),
-    marginLeft: WP(2)
+    marginLeft: WP(2),
+    color:'black'
   },
   dropDownLable: {
     fontSize: WP(3),

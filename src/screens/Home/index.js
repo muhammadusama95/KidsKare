@@ -820,7 +820,7 @@ const Home = () => {
                 <DropDownPicker
                   items={hours}
                   defaultValue={modalHour}
-                  dropDownStyle={{ height: 10 }}
+                  //dropDownStyle={{ height: 10 }}
                   containerStyle={{ height: 40, width: WP(17) }}
                   style={{ backgroundColor: '#fafafa', }}
                   dropDownStyle={{ backgroundColor: '#fafafa' }}
