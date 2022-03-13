@@ -8,7 +8,8 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Alert,
-  SafeAreaView
+  SafeAreaView,
+  Image
 } from 'react-native';
 import moment, { min } from 'moment'
 import { CheckBox } from 'react-native-elements';
@@ -19,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from "@react-native-community/netinfo";
 import { Modal, ModalContent } from "react-native-modals";
 import { hours, minutes, AMPM, type } from '../../helpers/Constants';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Array = ["Hello", "ANDknad", "ALDNlaskdn"]
 const Home = () => {
@@ -73,7 +75,9 @@ const Home = () => {
 
   useEffect(() => {
     interval.current = setInterval(() => {
+      console.log("On Refreshing Data");
       fetchData()
+
 
       //Yeh wala function tha jo ghalat response deta tha. Agar check karna to isay uncomment ker le or wifi off ker ke
       //On ker. Result mil jaye ga.  
@@ -104,6 +108,11 @@ const Home = () => {
       clearInterval(interval.current)
       // unsubscribe()
     }
+    // return () => {
+    //   console.log("CLEARED")
+    //   clearInterval(interval.current)
+      
+    // }
   }, [])
 
 
@@ -346,9 +355,13 @@ const Home = () => {
 
     for (let i = 0; i < mainArray.current.length; i++) {
       if (final) {
+        // console.log("TotalRollCalls",)
+        if(mainArray.current[i].roll_calls.length >= 1 )
+        {
         if (mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "nap" || mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "in") {
           allChildren.push(mainArray.current[i])
         }
+      }
       }
       if (nap) {
         if (mainArray.current[i].grade !== 5) {
@@ -781,6 +794,17 @@ const Home = () => {
               checkedColor={AppColor.purple}
               onPress={() => {
                 setFinal(!final)
+
+                if(nap)
+                {
+                  setNap(!nap)
+                }
+                if(bus)
+                {
+                  setBus(!bus)
+                }
+
+
                 // filterChild()
               }}
               containerStyle={styles.checkBoxContainerStyle}
@@ -797,6 +821,10 @@ const Home = () => {
                 setNap(!nap)
                 if (bus) {
                   setBus(!bus)
+                }
+                if(final)
+                {
+                  setFinal(!final)
                 }
                 // filterChild();
 
@@ -815,6 +843,10 @@ const Home = () => {
                 if (nap) {
                   setNap(!nap)
                 }
+                if(final)
+                {
+                  setFinal(!final)
+                }
                 // filterChild()
               }}
               containerStyle={styles.checkBoxContainerStyle}
@@ -831,7 +863,8 @@ const Home = () => {
           renderItem={({ item, index }) => {
             return (
               <View style={[styles.enrollItem, { backgroundColor: index % 2 == 0 ? AppColor.lightGrey : 'white' }]}>
-                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'black' : 'green' : 'black' }]} onPress={() => onPress(item, index)}>
+                <TouchableOpacity style={[styles.width40, {backgroundColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'black' : 'green' : 'black' }]} onPress={() => onPress(item, index)}>
+                 <Image source={require('../../helpers/theme/icons8-clock-128.png')} style={{height:WP(5),width:WP(5),tintColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'white' : null: 'white' }} />
                   <View style={styles.btn_enroll}>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.fname + " " + item.lname}</Text>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.enrollment_display}</Text>
@@ -865,6 +898,7 @@ const Home = () => {
           }}
           keyExtractor={(item, index) => index}
         />
+        <Text style={{fontSize:WP(3),marginBottom:WP(8)}}>Headcount: {children?.length}</Text>
       </ScrollView>
 
       <Modal
@@ -1041,7 +1075,6 @@ const styles = StyleSheet.create({
   rowDirection: {
     flexDirection: 'row',
     borderBottomWidth: 3,
-    marginTop: WP(10),
     zIndex: 10,
     justifyContent: 'space-between'
   },
@@ -1071,13 +1104,14 @@ const styles = StyleSheet.create({
   },
   width40: {
     width: WP(35),
-    justifyContent: 'center',
     borderRadius: WP(5),
     height: WP(10),
     backgroundColor: 'black',
     borderColor: 'white',
     borderWidth: 2,
-    padding: WP(2)
+    padding: WP(2),
+    alignItems:'center',
+    flexDirection:'row'
   },
   btn_enroll: {
     justifyContent: 'center',
