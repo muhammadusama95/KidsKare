@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   TouchableWithoutFeedback,
+  Alert,
+  SafeAreaView
 } from 'react-native';
 import moment, { min } from 'moment'
 import { CheckBox } from 'react-native-elements';
@@ -38,7 +40,8 @@ const Home = () => {
   const [selectedClass, setSelectedClass] = useState(0)
   const [selectedBus, setSelectedBus] = useState(0)
   const [children, setChildren] = useState([])
-  const [isConnected, setConnected] = useState(false)
+  const [isConnected, setConnected] = useState(true)
+  const [displayNetworkState, setdisplayNetworkState] = useState(false)
   const [isVisible, setVisible] = useState(false)
   const [modalHour, setHour] = useState(1)
   const [modalMinute, setMinute] = useState(0)
@@ -53,7 +56,20 @@ const Home = () => {
   const dropDown5 = React.useRef();
   const interval = useRef(null)
   const mainArray = useRef([]);
+  const connectionAlertDisplaye = useRef(false)
+  // const isConnected = useRef(null)
 
+  // const unsubscribe = NetInfo.addEventListener((state) => {
+
+  //   isConnected.current = state.isConnected
+  // })
+
+  // useMemo(() => {
+  //   console.log("FMAKOFNOSKn",isConnected.current)
+  //   if(!isConnected.current)
+  //   setdisplayNetworkState(true)
+  //   return {};
+  // }, [isConnected.current]);
 
   useEffect(() => {
     interval.current = setInterval(() => {
@@ -62,20 +78,31 @@ const Home = () => {
       //Yeh wala function tha jo ghalat response deta tha. Agar check karna to isay uncomment ker le or wifi off ker ke
       //On ker. Result mil jaye ga.  
 
-      //   NetInfo.fetch().then(state => {
-      //     // alert(state.isConnected)
-      //     setConnected(state.isConnected)
-      //   })
+
     }, 60000);
 
   }, [])
 
+
   useEffect(() => {
+    // setInterval(()=>{
+    //   NetInfo.fetch().then(state => {
+    //     // alert(connectionAlertDisplaye.current + " " + state.isConnected )
+    //     if (!connectionAlertDisplaye.current && !state.isConnected) {
+    //       connectionAlertDisplaye.current = true
+    //       setConnected(false)
+    //       setdisplayNetworkState(true)
+    //       setTimeout(() => {
+    //         setdisplayNetworkState(false)
+    //       }, 5000)
+    //     }
+    //   })
+    // },60000)
 
     return () => {
       console.log("CLEARED")
       clearInterval(interval.current)
-      
+      // unsubscribe()
     }
   }, [])
 
@@ -142,10 +169,24 @@ const Home = () => {
     ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
       console.log("Response" + key, response)
       if (isSuccess) {
+        if (connectionAlertDisplaye.current) {
+          connectionAlertDisplaye.current = false
+          setConnected(true)
+          setdisplayNetworkState(true)
+          setTimeout(() => {
+            setdisplayNetworkState(false)
+          }, 5000)
+        }
         // response.errors[0] == "Error getting old entry!"
         AsyncStorage.removeItem(key)
         getChildren(token)
       } else {
+        setConnected(false)
+        setdisplayNetworkState(true)
+        connectionAlertDisplaye.current = false
+        // setTimeout(() => {
+        //   setdisplayNetworkState(false)
+        // }, 5000)
         console.log("Keep Data on hold for " + key)
       }
     })
@@ -176,8 +217,9 @@ const Home = () => {
         params.entries.push(element)
       });
       console.log("updateEntry", params)
-      await getCheckInOut(token, params, "roll_call_array_update")
     }
+
+    await getCheckInOut(token, params, "roll_call_array_update")
 
 
     let deleteParams = {
@@ -646,7 +688,10 @@ const Home = () => {
   }, [])
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
+      {displayNetworkState ? <View style={{ width: '100%', height: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: isConnected ? "#00aff5" : "#f50014" }}>
+        <Text style={{ textAlign: 'center', color: '#fff', fontSize: WP(4) }}>{!isConnected ? "Connection Not Available" : "Online"}</Text>
+      </View> : null}
       <View style={styles.rowDirection}>
         <View style={styles.left_bar}>
           <View style={styles.school_info}>
@@ -940,7 +985,19 @@ const Home = () => {
                 />
               </View>
               <View style={{ flexDirection: 'row' }}>
-                <TouchableOpacity onPress={() => deleteEntry()}
+                <TouchableOpacity onPress={() => {
+                  Alert.alert(
+                    //This is title
+                    'Delete Entry',
+                    //This is body text
+                    'Are you sure you want to delete this entry',
+                    [
+                      { text: 'No', onPress: () => { } },
+                      { text: 'Yes', onPress: () => deleteEntry() },
+                    ],
+                    //on clicking out side, Alert will not dismiss
+                  );
+                }}
                   style={{ backgroundColor: 'red', borderWidth: 0.4, borderColor: '#000', paddingVertical: 10, paddingHorizontal: 20 }}>
                   <Text style={{ color: '#fff' }}>Delete</Text>
                 </TouchableOpacity>
@@ -961,7 +1018,7 @@ const Home = () => {
           </TouchableWithoutFeedback>
         </ModalContent>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
