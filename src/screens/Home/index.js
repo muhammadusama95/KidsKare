@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { Button } from 'react-native-elements/dist/buttons/Button';
 import {
   View,
   FlatList,
@@ -20,7 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from "@react-native-community/netinfo";
 import { Modal, ModalContent } from "react-native-modals";
 import { hours, minutes, AMPM, type } from '../../helpers/Constants';
-import { SafeAreaView } from 'react-native-safe-area-context';
+//import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Array = ["Hello", "ANDknad", "ALDNlaskdn"]
 const Home = () => {
@@ -43,7 +44,7 @@ const Home = () => {
   const [selectedBus, setSelectedBus] = useState(0)
   const [children, setChildren] = useState([])
   const [isConnected, setConnected] = useState(true)
-  const [displayNetworkState, setdisplayNetworkState] = useState(false)
+  const [displayNetworkState, setdisplayNetworkState] = useState(true)
   const [isVisible, setVisible] = useState(false)
   const [modalHour, setHour] = useState(1)
   const [modalMinute, setMinute] = useState(0)
@@ -74,16 +75,31 @@ const Home = () => {
   // }, [isConnected.current]);
 
   useEffect(() => {
-    interval.current = setInterval(() => {
-      console.log("On Refreshing Data");
-      fetchData()
+    // interval.current = setInterval(() => {
+    //   console.log("On Refreshing Data");
+
+    const removeNetInfoSubscription = NetInfo.addEventListener((state) => {
+
+      const offline = !(state.isConnected && state.isInternetReachable);
+      console.log("OnEventChangeLog", state.isConnected + "" + "" + state.isWifiEnabled);
+      if(!displayNetworkState&&state.isConnected)
+      {
+        fetchData()
+      }
+
+      setdisplayNetworkState(state.isConnected)
+
+      //setOfflineStatus(offline);
+    });
+
+    // fetchData()
+
+    return () => removeNetInfoSubscription();
+    //Yeh wala function tha jo ghalat response deta tha. Agar check karna to isay uncomment ker le or wifi off ker ke
+    //On ker. Result mil jaye ga.  
 
 
-      //Yeh wala function tha jo ghalat response deta tha. Agar check karna to isay uncomment ker le or wifi off ker ke
-      //On ker. Result mil jaye ga.  
-
-
-    }, 60000);
+    // }, 60000);
 
   }, [])
 
@@ -103,15 +119,15 @@ const Home = () => {
     //   })
     // },60000)
 
-    return () => {
-      console.log("CLEARED")
-      clearInterval(interval.current)
-      // unsubscribe()
-    }
     // return () => {
     //   console.log("CLEARED")
     //   clearInterval(interval.current)
-      
+    //   // unsubscribe()
+    // }
+    // return () => {
+    //   console.log("CLEARED")
+    //   clearInterval(interval.current)
+
     // }
   }, [])
 
@@ -149,9 +165,11 @@ const Home = () => {
           value = item.id;
           arrayios.push({ label: label, key: value, value: value });
         })
+        setdisplayNetworkState(true)
         AsyncStorage.setItem("busses", JSON.stringify(arrayios));
         setBusList(arrayios)
       } else {
+        setdisplayNetworkState(false)
         // alert(response)
 
       }
@@ -168,8 +186,9 @@ const Home = () => {
         mainArray.current = response
         setChildren(response)
         filterChild()
+        setdisplayNetworkState(true)
       } else {
-
+        setdisplayNetworkState(false)
         //alert(response)
       }
     })
@@ -178,21 +197,23 @@ const Home = () => {
     ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
       console.log("Response" + key, response)
       if (isSuccess) {
-        if (connectionAlertDisplaye.current) {
-          connectionAlertDisplaye.current = false
-          setConnected(true)
-          setdisplayNetworkState(true)
-          setTimeout(() => {
-            setdisplayNetworkState(false)
-          }, 5000)
-        }
+        // if (connectionAlertDisplaye.current) {
+        //   connectionAlertDisplaye.current = false
+        //   setConnected(true)
+        //   setdisplayNetworkState(true)
+        //   setTimeout(() => {
+        //     setdisplayNetworkState(false)
+        //   }, 5000)
+        // }
         // response.errors[0] == "Error getting old entry!"
+        setdisplayNetworkState(true)
         AsyncStorage.removeItem(key)
         getChildren(token)
       } else {
-        setConnected(false)
-        setdisplayNetworkState(true)
-        connectionAlertDisplaye.current = false
+        setdisplayNetworkState(false)
+        // setConnected(false)
+        // setdisplayNetworkState(true)
+        // connectionAlertDisplaye.current = false
         // setTimeout(() => {
         //   setdisplayNetworkState(false)
         // }, 5000)
@@ -202,6 +223,18 @@ const Home = () => {
   }
 
   fetchData = async () => {
+
+
+  //  await NetInfo.fetch().then(state => {
+  
+  //     console.log("State",state.isConnected)
+      setdisplayNetworkState(true)
+    
+    //})
+
+
+
+
     let data = {
       type: 'toggle',
       data: []
@@ -356,12 +389,11 @@ const Home = () => {
     for (let i = 0; i < mainArray.current.length; i++) {
       if (final) {
         // console.log("TotalRollCalls",)
-        if(mainArray.current[i].roll_calls.length >= 1 )
-        {
-        if (mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "nap" || mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "in") {
-          allChildren.push(mainArray.current[i])
+        if (mainArray.current[i].roll_calls.length >= 1) {
+          if (mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "nap" || mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "in") {
+            allChildren.push(mainArray.current[i])
+          }
         }
-      }
       }
       if (nap) {
         if (mainArray.current[i].grade !== 5) {
@@ -381,13 +413,13 @@ const Home = () => {
       }
       if (sortByClass !== 0) {
 
-        if (sortByClass === 'Todd' && mainArray.current[i].grade === 1) {
+        if (sortByClass === 'Todd' && mainArray.current[i].grade == 1) {
           allChildren.push(mainArray.current[i])
         }
-        else if (sortByClass === 'PS' && mainArray.current[i].grade === 2) {
+        else if (sortByClass === 'PS' && (mainArray.current[i].grade == 2 || mainArray.current[i].grade == 3 || mainArray.current[i].grade == 4)) {
           allChildren.push(mainArray.current[i])
         }
-        else if (sortByClass === 'GS' && (mainArray.current[i].class === 9 || mainArray.current[i].class === 10)) {
+        else if (sortByClass === 'GS' && (mainArray.current[i].class == 9 || mainArray.current[i].class == 10)) {
           allChildren.push(mainArray.current[i])
         } else if (sortByClass == mainArray.current[i].class) {
           allChildren.push(mainArray.current[i])
@@ -545,11 +577,14 @@ const Home = () => {
             console.log("Response", response)
             AsyncStorage.removeItem("roll_call_array_update")
             getChildren(token)
+            setdisplayNetworkState(true)
           } else {
+            setdisplayNetworkState(false)
             AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
           }
         })
       } else {
+        setdisplayNetworkState(false)
         console.log("PARAMSPUT", params)
         AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
       }
@@ -557,6 +592,17 @@ const Home = () => {
 
     setVisible(false)
 
+  }
+
+  const networkDetection = async () => {
+    // NetInfo.isConnected.fetch().then(isConnected => {
+    //   console.log('First, is ' + (isConnected ? 'online' : 'offline'));
+    // });
+
+    // NetInfo.isConnected.addEventListener(
+    //   'connectionChange',
+    //   handleFirstConnectivityChange
+    // );
   }
 
   const deleteEntry = async (item) => {
@@ -618,11 +664,14 @@ const Home = () => {
             console.log("Response", response)
             AsyncStorage.removeItem("roll_call_array_delete")
             getChildren(token)
+            setdisplayNetworkState(true)
           } else {
+            setdisplayNetworkState(false)
             AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
           }
         })
       } else {
+        setdisplayNetworkState(false)
         console.log("PARAMSDelete", JSON.stringify(entries))
         AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
       }
@@ -674,26 +723,21 @@ const Home = () => {
     }
     arr[index].roll_calls.push(forLocalArray)
 
-    NetInfo.fetch().then(state => {
-      if (state.isConnected) {
+
         console.log("PARAMS", data)
         ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
           console.log("Response", response)
           if (isSuccess) {
+            setdisplayNetworkState(true)
             AsyncStorage.removeItem("roll_call_array")
             console.log("Data is Removing")
             getChildren(token)
           } else {
+            setdisplayNetworkState(false)
             AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
             console.log("Keeps the data on hold")
           }
         })
-      } else {
-        AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
-      }
-    });
-    AsyncStorage.setItem("childsdata", JSON.stringify(arr))
-    setChildren(arr)
   }
 
   useEffect(() => {
@@ -702,8 +746,16 @@ const Home = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {displayNetworkState ? <View style={{ width: '100%', height: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: isConnected ? "#00aff5" : "#f50014" }}>
-        <Text style={{ textAlign: 'center', color: '#fff', fontSize: WP(4) }}>{!isConnected ? "Connection Not Available" : "Online"}</Text>
+      {!displayNetworkState ? <View style={{ flexDirection: 'row', width: '100%', height: 30, alignItems: 'center',justifyContent: 'center', backgroundColor: "#f50014" }}>
+        <Text style={{ textAlign: 'center', color: '#fff', fontSize: WP(4) }}>{!isConnected ? "Internet is not available" : "Internet is not available"}</Text>
+        <TouchableOpacity onPress={() => {
+                fetchData()
+            }
+          }  style={{color: 'black',fontSize: WP(1), alignItems: 'center',justifyContent: 'center',width: 100, height: 30, margin: 8, borderRadius: 6, backgroundColor: 'white' }} >
+            <Text  style={{ color: 'red',textAlign: 'center' }} >Retry/Sync
+            
+            </Text> 
+        </TouchableOpacity>
       </View> : null}
       <View style={styles.rowDirection}>
         <View style={styles.left_bar}>
@@ -795,12 +847,10 @@ const Home = () => {
               onPress={() => {
                 setFinal(!final)
 
-                if(nap)
-                {
+                if (nap) {
                   setNap(!nap)
                 }
-                if(bus)
-                {
+                if (bus) {
                   setBus(!bus)
                 }
 
@@ -822,8 +872,7 @@ const Home = () => {
                 if (bus) {
                   setBus(!bus)
                 }
-                if(final)
-                {
+                if (final) {
                   setFinal(!final)
                 }
                 // filterChild();
@@ -843,8 +892,7 @@ const Home = () => {
                 if (nap) {
                   setNap(!nap)
                 }
-                if(final)
-                {
+                if (final) {
                   setFinal(!final)
                 }
                 // filterChild()
@@ -863,8 +911,8 @@ const Home = () => {
           renderItem={({ item, index }) => {
             return (
               <View style={[styles.enrollItem, { backgroundColor: index % 2 == 0 ? AppColor.lightGrey : 'white' }]}>
-                <TouchableOpacity style={[styles.width40, {backgroundColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'black' : 'green' : 'black' }]} onPress={() => onPress(item, index)}>
-                 <Image source={require('../../helpers/theme/icons8-clock-128.png')} style={{height:WP(5),width:WP(5),tintColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'white' : null: 'white' }} />
+                <TouchableOpacity style={[styles.width40, { backgroundColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'black' : 'green' : 'black' }]} onPress={() => onPress(item, index)}>
+                  <Image source={require('../../helpers/theme/icons8-clock-128.png')} style={{ height: WP(5), width: WP(5), tintColor: item.roll_calls.length >= 1 ? item.roll_calls[item.roll_calls.length - 1].direction == 'out' ? 'white' : null : 'white' }} />
                   <View style={styles.btn_enroll}>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.fname + " " + item.lname}</Text>
                     <Text style={{ color: 'white', fontSize: WP(2) }}>{item.enrollment_display}</Text>
@@ -898,7 +946,7 @@ const Home = () => {
           }}
           keyExtractor={(item, index) => index}
         />
-        <Text style={{fontSize:WP(3),marginBottom:WP(8)}}>Headcount: {children?.length}</Text>
+        <Text style={{ fontSize: WP(3), marginBottom: WP(8) }}>Headcount: {children?.length}</Text>
       </ScrollView>
 
       <Modal
@@ -1110,8 +1158,8 @@ const styles = StyleSheet.create({
     borderColor: 'white',
     borderWidth: 2,
     padding: WP(2),
-    alignItems:'center',
-    flexDirection:'row'
+    alignItems: 'center',
+    flexDirection: 'row'
   },
   btn_enroll: {
     justifyContent: 'center',
