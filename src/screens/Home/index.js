@@ -193,6 +193,7 @@ const Home = () => {
       }
     })
   }
+
   const getCheckInOut = (token, data, key) => {
     ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
       console.log("Response" + key, response)
@@ -361,6 +362,7 @@ const Home = () => {
       return 2
     }
   }
+
   const showModal = (item) => {
     let now = moment(item.time, 'hh:mm:ss')
     console.log(now.hour() === 0 ? 12 : now.hour())
@@ -734,10 +736,13 @@ const Home = () => {
             getChildren(token)
           } else {
             setdisplayNetworkState(false)
+
             AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
             console.log("Keeps the data on hold")
           }
         })
+        AsyncStorage.setItem("childsdata", JSON.stringify(arr))
+        setChildren(arr)
   }
 
   useEffect(() => {
@@ -804,6 +809,7 @@ const Home = () => {
                 onChangeItem={(item) => {
                   setSortByClass(item.key)
                 }}
+                
                 selectedLabelStyle={{ color: AppColor.black }}
                 containerStyle={styles.dropDownContainerStyle}
                 placeholderStyle={styles.dropDownplaceholder}
