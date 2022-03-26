@@ -41,6 +41,7 @@ const Home = () => {
   const [sortByName, setSortByName] = useState(0)
   const [sortByValue, setSortByValue] = useState(0)
   const [selectedClass, setSelectedClass] = useState(0)
+  const [selectDynamicClass, setSelectDynamicClass] = useState("")
   const [selectedBus, setSelectedBus] = useState(0)
   const [children, setChildren] = useState([])
   const [isConnected, setConnected] = useState(true)
@@ -82,7 +83,7 @@ const Home = () => {
 
       const offline = !(state.isConnected && state.isInternetReachable);
       console.log("OnEventChangeLog", state.isConnected + "" + "" + state.isWifiEnabled);
-      if(!displayNetworkState&&state.isConnected)
+      if(state.isConnected)
       {
         fetchData()
       }
@@ -812,6 +813,7 @@ const Home = () => {
                 
                 selectedLabelStyle={{ color: AppColor.black }}
                 containerStyle={styles.dropDownContainerStyle}
+                defaultValue={selectDynamicClass}
                 placeholderStyle={styles.dropDownplaceholder}
                 labelStyle={styles.dropDownLable}
                 itemStyle={styles.dropDownItem}
@@ -835,6 +837,7 @@ const Home = () => {
                   }}
                   selectedLabelStyle={{ color: AppColor.black }}
                   containerStyle={styles.dropDownContainerStyle}
+                  
                   placeholderStyle={styles.dropDownplaceholder}
                   labelStyle={styles.dropDownLable}
                   itemStyle={styles.dropDownItem}
@@ -891,7 +894,8 @@ const Home = () => {
             />
             <CheckBox
               title={"Bus"}
-              checked={bus}
+              checked={bus
+                ||sortByClass=="GS"}
               checkedColor={AppColor.purple}
               onPress={() => {
                 setBus(!bus)
@@ -900,6 +904,14 @@ const Home = () => {
                 }
                 if (final) {
                   setFinal(!final)
+                }
+                if(!bus)
+                {
+                  setSelectDynamicClass("GS")
+                }else
+                {
+                  setSelectDynamicClass("ac")
+                  setSortByClass("ac")
                 }
                 // filterChild()
               }}
