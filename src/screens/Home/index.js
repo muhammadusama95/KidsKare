@@ -114,7 +114,7 @@ const Home = () => {
     //       setConnected(false)
     //       setdisplayNetworkState(true)
     //       setTimeout(() => {
-    //         setdisplayNetworkState(false)
+    //         setdisplayNetworkState(true)
     //       }, 5000)
     //     }
     //   })
@@ -170,7 +170,7 @@ const Home = () => {
         AsyncStorage.setItem("busses", JSON.stringify(arrayios));
         setBusList(arrayios)
       } else {
-        setdisplayNetworkState(false)
+        setdisplayNetworkState(true)
         // alert(response)
 
       }
@@ -189,7 +189,7 @@ const Home = () => {
         filterChild()
         setdisplayNetworkState(true)
       } else {
-        setdisplayNetworkState(false)
+        setdisplayNetworkState(true)
         //alert(response)
       }
     })
@@ -204,7 +204,7 @@ const Home = () => {
         //   setConnected(true)
         //   setdisplayNetworkState(true)
         //   setTimeout(() => {
-        //     setdisplayNetworkState(false)
+        //     setdisplayNetworkState(true)
         //   }, 5000)
         // }
         // response.errors[0] == "Error getting old entry!"
@@ -212,12 +212,12 @@ const Home = () => {
         AsyncStorage.removeItem(key)
         getChildren(token)
       } else {
-        setdisplayNetworkState(false)
+        setdisplayNetworkState(true)
         // setConnected(false)
         // setdisplayNetworkState(true)
         // connectionAlertDisplaye.current = false
         // setTimeout(() => {
-        //   setdisplayNetworkState(false)
+        //   setdisplayNetworkState(true)
         // }, 5000)
         console.log("Keep Data on hold for " + key)
       }
@@ -582,12 +582,12 @@ const Home = () => {
             getChildren(token)
             setdisplayNetworkState(true)
           } else {
-            setdisplayNetworkState(false)
+            setdisplayNetworkState(true)
             AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
           }
         })
       } else {
-        setdisplayNetworkState(false)
+        setdisplayNetworkState(true)
         console.log("PARAMSPUT", params)
         AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
       }
@@ -669,12 +669,12 @@ const Home = () => {
             getChildren(token)
             setdisplayNetworkState(true)
           } else {
-            setdisplayNetworkState(false)
+            setdisplayNetworkState(true)
             AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
           }
         })
       } else {
-        setdisplayNetworkState(false)
+        setdisplayNetworkState(true)
         console.log("PARAMSDelete", JSON.stringify(entries))
         AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
       }
@@ -736,7 +736,7 @@ const Home = () => {
             console.log("Data is Removing")
             getChildren(token)
           } else {
-            setdisplayNetworkState(false)
+            setdisplayNetworkState(true)
 
             AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
             console.log("Keeps the data on hold")
