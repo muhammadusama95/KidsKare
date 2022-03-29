@@ -30,6 +30,7 @@ const Array = ["Hello", "ANDknad", "ALDNlaskdn"]
 const Home = () => {
 
   const [loading, setLoading] = useState(false)
+  const [called, setCalled] = useState("")
   const [token, setToken] = useState(null)
   const [schoolName, setSchoolName] = useState(null)
   const [address, setSchoolAddress] = useState(null)
@@ -85,13 +86,27 @@ const Home = () => {
     const removeNetInfoSubscription = NetInfo.addEventListener((state) => {
 
       const offline = !(state.isConnected && state.isInternetReachable);
+      setdisplayNetworkState(state.isConnected)
       console.log("OnEventChangeLog", state.isConnected + "" + "" + state.isWifiEnabled);
-      if(state.isConnected)
-      {
-        fetchData()
+      if (state.isConnected) {
+        console.log("OnConnected")
       }
 
-      setdisplayNetworkState(state.isConnected)
+      setTimeout(callData,
+        2000
+    )
+      
+
+      // if (!called) {
+      //   setCalled(true)
+      //   // console.log("CalledFromNetworkInfo")
+      //   (async () => {
+      //     const data = await fetchData();
+      //  })
+      // }
+
+
+
 
       //setOfflineStatus(offline);
     });
@@ -106,6 +121,10 @@ const Home = () => {
     // }, 60000);
 
   }, [])
+
+  const callData = async () => {
+    const data =  await fetchData()
+  }
 
 
   useEffect(() => {
@@ -184,7 +203,7 @@ const Home = () => {
 
     ApiServices.getChildren(token, ({ isSuccess, response }) => {
       if (isSuccess) {
-        console.log(JSON.stringify(response))
+        // console.log(JSON.stringify(response))
         AsyncStorage.setItem("childsdata", JSON.stringify(response));
         mainArray.current = []
         mainArray.current = response
@@ -198,9 +217,10 @@ const Home = () => {
     })
   }
 
-  const getCheckInOut = async (token, data, key) => {
-    ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
-      console.log("Response" + key, response)
+  const getCheckInOut = async (token, data, key,dataForSaving) => {
+    console.log("Params For     " + key, data)
+   await ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
+      console.log("Response    " + key, response);
       if (isSuccess) {
         // if (connectionAlertDisplaye.current) {
         //   connectionAlertDisplaye.current = false
@@ -211,18 +231,22 @@ const Home = () => {
         //   }, 5000)
         // }
         // response.errors[0] == "Error getting old entry!"
-        setdisplayNetworkState(true)
-       AsyncStorage.removeItem(key)
-        
+        setdisplayNetworkState(true);
+        AsyncStorage.removeItem(key);
+        return "";
+
       } else {
-        setdisplayNetworkState(false)
+        setdisplayNetworkState(false);
         // setConnected(false)
         // setdisplayNetworkState(true)
         // connectionAlertDisplaye.current = false
         // setTimeout(() => {
         //   setdisplayNetworkState(true)
         // }, 5000)
-        console.log("Keep Data on hold for " + key)
+
+        AsyncStorage.setItem(key, dataForSaving)
+        console.log("Keep Data on hold for " + key);
+        return "";
       }
     })
   }
@@ -230,17 +254,17 @@ const Home = () => {
   fetchData = async () => {
 
 
-   await NetInfo.fetch().then(state => {
-  
-  //     console.log("State",state.isConnected)
+    await NetInfo.fetch().then(state => {
+
+          console.log("State",state.isConnected)
       setdisplayNetworkState(state.isConnected)
       setLoading(state.isConnected)
-      
+
     })
 
 
 
-
+    console.log("OnStartedCalling")
     let data = {
       type: 'toggle',
       data: []
@@ -258,28 +282,31 @@ const Home = () => {
       entries: []
     }
 
-    console.log("checkInCheckOut", checkInCheckOutDataForUploading)
+    //console.log("checkInCheckOut", checkInCheckOutDataForUploading)
     checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
     if (checkInCheckOutDataForUploading != null) {
       checkInCheckOutDataForUploading.forEach(element => {
         data.data.push(element)
       });
       //data.data=checkInCheckOutDataForUploading;
-
-      await getCheckInOut(token, data, "roll_call_array")
+      AsyncStorage.removeItem("roll_call_array");
+      await getCheckInOut(token, data, "roll_call_array",JSON.stringify(checkInCheckOutDataForUploading))
+      console.log("OnCheckInCheckOut")
     }
 
     updateForUploading = JSON.parse(updateForUploading);
-    console.log("updateEntry", updateForUploading)
+    //console.log("updateEntry", updateForUploading)
     if (updateForUploading != null) {
 
       updateForUploading.forEach(element => {
         params.entries.push(element)
       });
-      console.log("updateEntry", params)
+      //  console.log("updateEntry", params)
+      AsyncStorage.removeItem("roll_call_array_update");
+      await getCheckInOut(token, params, "roll_call_array_update",JSON.stringify(updateForUploading))
     }
 
-    await getCheckInOut(token, params, "roll_call_array_update")
+
 
 
     let deleteParams = {
@@ -293,15 +320,15 @@ const Home = () => {
         deleteParams.entries.push(element)
       });
       // deleteParams.entries=updateForUploading;
-      console.log("deleteEntry", deleteParams)
-
-      await getCheckInOut(token, deleteParams, "roll_call_array_delete")
+      // console.log("deleteEntry", deleteParams)
+      AsyncStorage.removeItem("roll_call_array_delete");
+      await getCheckInOut(token, deleteParams, "roll_call_array_delete",JSON.stringify(deleteForUploading))
     }
 
     //await getChildren(token)
 
 
-    
+
 
 
 
@@ -346,18 +373,17 @@ const Home = () => {
     }
 
     setToken(token)
-    setLoading(false)
     if (token) {
       await getChildren(token)
       await getClasses(token)
       await getBusses(token)
-
-
-
-
-
     }
-    
+    setLoading(false)
+
+    console.log("OnCallingFinishedNow")
+
+
+
   }
 
   const getType = (direction) => {
@@ -735,32 +761,32 @@ const Home = () => {
     arr[index].roll_calls.push(forLocalArray)
 
 
-        console.log("PARAMS", data)
-        ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
-          console.log("Response", response)
-          if (isSuccess) {
-            setdisplayNetworkState(true)
-            AsyncStorage.removeItem("roll_call_array")
-            console.log("Data is Removing")
-            getChildren(token)
-          } else {
-            setdisplayNetworkState(false)
+    console.log("PARAMS", data)
+    ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
+      console.log("Response", response)
+      if (isSuccess) {
+        setdisplayNetworkState(true)
+        AsyncStorage.removeItem("roll_call_array")
+        console.log("Data is Removing")
+        getChildren(token)
+      } else {
+        setdisplayNetworkState(false)
 
-            AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
-            console.log("Keeps the data on hold")
-          }
-        })
-        AsyncStorage.setItem("childsdata", JSON.stringify(arr))
-        setChildren(arr)
+        AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
+        console.log("Keeps the data on hold")
+      }
+    })
+    AsyncStorage.setItem("childsdata", JSON.stringify(arr))
+    setChildren(arr)
   }
 
   useEffect(() => {
-    fetchData()
+    //fetchData()
   }, [])
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {!displayNetworkState ? <View style={{ flexDirection: 'row', width: '100%', height: 30, alignItems: 'center',justifyContent: 'center', backgroundColor: "#f50014" }}>
+      {!displayNetworkState ? <View style={{ flexDirection: 'row', width: '100%', height: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: "#f50014" }}>
         <Text style={{ textAlign: 'center', color: '#fff', fontSize: WP(4) }}>{!isConnected ? "Internet is not available" : "Internet is not available"}</Text>
         {/* <TouchableOpacity onPress={() => {
                 fetchData()
@@ -773,11 +799,11 @@ const Home = () => {
       </View> : null}
       <View style={styles.rowDirection}>
 
-      <ProgressLoader
-                visible={loading}
-                isModal={true} isHUD={true}
-                hudColor={"#000000"}
-                color={"#FFFFFF"} />
+        <ProgressLoader
+          visible={loading}
+          isModal={true} isHUD={true}
+          hudColor={"#000000"}
+          color={"#FFFFFF"} />
 
         <View style={styles.left_bar}>
           <View style={styles.school_info}>
@@ -825,7 +851,7 @@ const Home = () => {
                 onChangeItem={(item) => {
                   setSortByClass(item.key)
                 }}
-                
+
                 selectedLabelStyle={{ color: AppColor.black }}
                 containerStyle={styles.dropDownContainerStyle}
                 defaultValue={selectDynamicClass}
@@ -852,7 +878,7 @@ const Home = () => {
                   }}
                   selectedLabelStyle={{ color: AppColor.black }}
                   containerStyle={styles.dropDownContainerStyle}
-                  
+
                   placeholderStyle={styles.dropDownplaceholder}
                   labelStyle={styles.dropDownLable}
                   itemStyle={styles.dropDownItem}
@@ -1133,7 +1159,7 @@ const Home = () => {
           </TouchableWithoutFeedback>
         </ModalContent>
       </Modal>
-     
+
     </SafeAreaView>
   );
 };

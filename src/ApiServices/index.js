@@ -91,7 +91,7 @@ class ServicesApi {
       });
   };
 
-  checkInOut = (token, params, callback) => {
+  checkInOut = async (token, params, callback) => {
     let url = this.getApiUrl(this.endPoints.checkInOut)
     var config = {
       method: 'post',
