@@ -12,6 +12,9 @@ import {
   SafeAreaView,
   Image
 } from 'react-native';
+
+
+import ProgressLoader from 'rn-progress-loader';
 import moment, { min } from 'moment'
 import { CheckBox } from 'react-native-elements';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -170,14 +173,14 @@ const Home = () => {
         AsyncStorage.setItem("busses", JSON.stringify(arrayios));
         setBusList(arrayios)
       } else {
-        setdisplayNetworkState(true)
+        setdisplayNetworkState(false)
         // alert(response)
 
       }
     })
   }
 
-  const getChildren = (token) => {
+  const getChildren = async (token) => {
 
     ApiServices.getChildren(token, ({ isSuccess, response }) => {
       if (isSuccess) {
@@ -189,13 +192,13 @@ const Home = () => {
         filterChild()
         setdisplayNetworkState(true)
       } else {
-        setdisplayNetworkState(true)
+        setdisplayNetworkState(false)
         //alert(response)
       }
     })
   }
 
-  const getCheckInOut = (token, data, key) => {
+  const getCheckInOut = async (token, data, key) => {
     ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
       console.log("Response" + key, response)
       if (isSuccess) {
@@ -209,10 +212,10 @@ const Home = () => {
         // }
         // response.errors[0] == "Error getting old entry!"
         setdisplayNetworkState(true)
-        AsyncStorage.removeItem(key)
-        getChildren(token)
+       AsyncStorage.removeItem(key)
+        
       } else {
-        setdisplayNetworkState(true)
+        setdisplayNetworkState(false)
         // setConnected(false)
         // setdisplayNetworkState(true)
         // connectionAlertDisplaye.current = false
@@ -227,12 +230,13 @@ const Home = () => {
   fetchData = async () => {
 
 
-  //  await NetInfo.fetch().then(state => {
+   await NetInfo.fetch().then(state => {
   
   //     console.log("State",state.isConnected)
-      setdisplayNetworkState(true)
-    
-    //})
+      setdisplayNetworkState(state.isConnected)
+      setLoading(state.isConnected)
+      
+    })
 
 
 
@@ -253,6 +257,18 @@ const Home = () => {
       type: "updateentry",
       entries: []
     }
+
+    console.log("checkInCheckOut", checkInCheckOutDataForUploading)
+    checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
+    if (checkInCheckOutDataForUploading != null) {
+      checkInCheckOutDataForUploading.forEach(element => {
+        data.data.push(element)
+      });
+      //data.data=checkInCheckOutDataForUploading;
+
+      await getCheckInOut(token, data, "roll_call_array")
+    }
+
     updateForUploading = JSON.parse(updateForUploading);
     console.log("updateEntry", updateForUploading)
     if (updateForUploading != null) {
@@ -282,19 +298,10 @@ const Home = () => {
       await getCheckInOut(token, deleteParams, "roll_call_array_delete")
     }
 
+    //await getChildren(token)
 
 
-
-    console.log("checkInCheckOut", checkInCheckOutDataForUploading)
-    checkInCheckOutDataForUploading = JSON.parse(checkInCheckOutDataForUploading)
-    if (checkInCheckOutDataForUploading != null) {
-      checkInCheckOutDataForUploading.forEach(element => {
-        data.data.push(element)
-      });
-      //data.data=checkInCheckOutDataForUploading;
-
-      await getCheckInOut(token, data, "roll_call_array")
-    }
+    
 
 
 
@@ -339,6 +346,7 @@ const Home = () => {
     }
 
     setToken(token)
+    setLoading(false)
     if (token) {
       await getChildren(token)
       await getClasses(token)
@@ -349,7 +357,7 @@ const Home = () => {
 
 
     }
-    setLoading(false)
+    
   }
 
   const getType = (direction) => {
@@ -582,12 +590,12 @@ const Home = () => {
             getChildren(token)
             setdisplayNetworkState(true)
           } else {
-            setdisplayNetworkState(true)
+            setdisplayNetworkState(false)
             AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
           }
         })
       } else {
-        setdisplayNetworkState(true)
+        setdisplayNetworkState(false)
         console.log("PARAMSPUT", params)
         AsyncStorage.setItem("roll_call_array_update", JSON.stringify(entries))
       }
@@ -669,12 +677,12 @@ const Home = () => {
             getChildren(token)
             setdisplayNetworkState(true)
           } else {
-            setdisplayNetworkState(true)
+            setdisplayNetworkState(false)
             AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
           }
         })
       } else {
-        setdisplayNetworkState(true)
+        setdisplayNetworkState(false)
         console.log("PARAMSDelete", JSON.stringify(entries))
         AsyncStorage.setItem("roll_call_array_delete", JSON.stringify(entries))
       }
@@ -736,7 +744,7 @@ const Home = () => {
             console.log("Data is Removing")
             getChildren(token)
           } else {
-            setdisplayNetworkState(true)
+            setdisplayNetworkState(false)
 
             AsyncStorage.setItem("roll_call_array", JSON.stringify(data.data))
             console.log("Keeps the data on hold")
@@ -754,16 +762,23 @@ const Home = () => {
     <SafeAreaView style={{ flex: 1 }}>
       {!displayNetworkState ? <View style={{ flexDirection: 'row', width: '100%', height: 30, alignItems: 'center',justifyContent: 'center', backgroundColor: "#f50014" }}>
         <Text style={{ textAlign: 'center', color: '#fff', fontSize: WP(4) }}>{!isConnected ? "Internet is not available" : "Internet is not available"}</Text>
-        <TouchableOpacity onPress={() => {
+        {/* <TouchableOpacity onPress={() => {
                 fetchData()
             }
           }  style={{color: 'black',fontSize: WP(1), alignItems: 'center',justifyContent: 'center',width: 100, height: 30, margin: 8, borderRadius: 6, backgroundColor: 'white' }} >
             <Text  style={{ color: 'red',textAlign: 'center' }} >Retry/Sync
             
             </Text> 
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View> : null}
       <View style={styles.rowDirection}>
+
+      <ProgressLoader
+                visible={loading}
+                isModal={true} isHUD={true}
+                hudColor={"#000000"}
+                color={"#FFFFFF"} />
+
         <View style={styles.left_bar}>
           <View style={styles.school_info}>
             <Text style={styles.textBold}>{schoolName}</Text>
@@ -892,7 +907,7 @@ const Home = () => {
               textStyle={styles.checkBoxTextStyle}
               size={WP(3)}
             />
-            <CheckBox
+            {/* <CheckBox
               title={"Bus"}
               checked={bus
                 ||sortByClass=="GS"}
@@ -919,7 +934,7 @@ const Home = () => {
               wrapperStyle={styles.checkBoxWrapperStyle}
               textStyle={styles.checkBoxTextStyle}
               size={WP(3)}
-            />
+            /> */}
           </View>
         </View>
       </View>
@@ -1118,6 +1133,7 @@ const Home = () => {
           </TouchableWithoutFeedback>
         </ModalContent>
       </Modal>
+     
     </SafeAreaView>
   );
 };
