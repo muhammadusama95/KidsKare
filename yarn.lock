@@ -6182,6 +6182,11 @@
   "resolved" "https://registry.npmjs.org/rimraf/-/rimraf-2.2.8.tgz"
   "version" "2.2.8"
 
+"rn-progress-loader@^1.0.8":
+  "integrity" "sha512-Cg071qopEOL0pSzN0EL2U7TCZ0Z25ZSRWi5387aqeTU/38JjTpAtDaZ2nJ/tfaM3fZqOHMeLr20FiOHB1RwQTQ=="
+  "resolved" "https://registry.npmjs.org/rn-progress-loader/-/rn-progress-loader-1.0.8.tgz"
+  "version" "1.0.8"
+
 "rsvp@^4.8.4":
   "integrity" "sha512-nfMOlASu9OnRJo1mbEk2cz0D56a1MBNrJ7orjRZQG10XDyuvwksKbuXNp6qa+kbn839HwjwhBzhFmdsaEAfauA=="
   "resolved" "https://registry.npmjs.org/rsvp/-/rsvp-4.8.5.tgz"
