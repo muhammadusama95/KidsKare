@@ -419,50 +419,66 @@ const Home = () => {
   const filterChild = async () => {
     let allChildren = []
 
+    
     // allChildren=JSON.parse(allChildren)
 
 
 
     for (let i = 0; i < mainArray.current.length; i++) {
+      var isKidAdded=false;
+
       if (final) {
         // console.log("TotalRollCalls",)
         if (mainArray.current[i].roll_calls.length >= 1) {
           if (mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "nap" || mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "in") {
             allChildren.push(mainArray.current[i])
+            isKidAdded=true;
           }
         }
       }
-      if (nap) {
+      if (nap&&!isKidAdded) {
         if (mainArray.current[i].grade !== 5) {
           allChildren.push(mainArray.current[i])
+          isKidAdded=true;
         }
-      } else if (bus) {
+      } else if (bus&&!isKidAdded) {
 
         if (mainArray.current[i].grade === 5) {
           if (sortByValue === 0 || sortByValue === "" || sortByValue === 'C') {
             allChildren.push(mainArray.current[i])
+            isKidAdded=true;
           } else {
             if (mainArray.current[i].bus === sortByValue) {
               allChildren.push(mainArray.current[i])
+              isKidAdded=true;
             }
           }
         }
       }
-      if (sortByClass !== 0) {
+      console.log("sortByClass",sortByClass)
 
+      if (sortByClass !== 0&&!isKidAdded) {
         if (sortByClass === 'Todd' && mainArray.current[i].grade == 1) {
           allChildren.push(mainArray.current[i])
+          isKidAdded=true;
         }
         else if (sortByClass === 'PS' && (mainArray.current[i].grade == 2 || mainArray.current[i].grade == 3 || mainArray.current[i].grade == 4)) {
           allChildren.push(mainArray.current[i])
+          isKidAdded=true;
         }
         else if (sortByClass === 'GS' && (mainArray.current[i].class == 9 || mainArray.current[i].class == 10)) {
           allChildren.push(mainArray.current[i])
+          isKidAdded=true;
         } else if (sortByClass == mainArray.current[i].class) {
           allChildren.push(mainArray.current[i])
+          isKidAdded=true;
+        }else if(sortByClass==='ac'&&!nap)
+        {
+          allChildren.push(mainArray.current[i])
+          isKidAdded=true;
         }
       }
-      if ((sortByClass === "ac" || sortByClass == 0) && (sortByValue == 0) && !nap && !bus && !final) {
+      if (!isKidAdded&&(sortByClass == 0) && (sortByValue == 0) && !nap && !bus && !final) {
         allChildren.push(mainArray.current[i])
       }
     }
