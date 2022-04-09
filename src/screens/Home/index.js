@@ -457,7 +457,7 @@ const Home = () => {
       }
       console.log("sortByClass",sortByClass)
 
-      if (sortByClass !== 0&&!isKidAdded) {
+      if (sortByClass !== 0&&!isKidAdded&&!nap) {
         if (sortByClass === 'Todd' && mainArray.current[i].grade == 1) {
           allChildren.push(mainArray.current[i])
           isKidAdded=true;
