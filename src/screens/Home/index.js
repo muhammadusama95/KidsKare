@@ -10,6 +10,7 @@ import {
   TouchableWithoutFeedback,
   Alert,
   SafeAreaView,
+  TextInput,
   Image
 } from 'react-native';
 
@@ -21,9 +22,10 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import ApiServices from "../../ApiServices";
 import { AppColor, WP } from '../../helpers';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from "@react-native-community/netinfo";
+import NetInfo, { fetch } from "@react-native-community/netinfo";
 import { Modal, ModalContent } from "react-native-modals";
 import { hours, minutes, AMPM, type } from '../../helpers/Constants';
+import { Dimensions } from 'react-native';
 //import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Array = ["Hello", "ANDknad", "ALDNlaskdn"]
@@ -38,6 +40,8 @@ const Home = () => {
   const [final, setFinal] = useState(false)
   const [nap, setNap] = useState(false)
   const [bus, setBus] = useState(false)
+  const [isAlertShown, setAlertShown] = useState(false)
+  const [state, setState] = useState(true)
   const [sortBy, setSortByList] = useState([{ label: 'First Name', key: 0, value: 0 }, { label: 'Last Name', key: 1, value: 1 }])
   const [classes, setClasses] = useState([])
   const [busList, setBusList] = useState([])
@@ -52,6 +56,7 @@ const Home = () => {
   const [displayNetworkState, setdisplayNetworkState] = useState(true)
   const [isVisible, setVisible] = useState(false)
   const [modalHour, setHour] = useState(1)
+  const [count, setCount] = useState(0)
   const [modalMinute, setMinute] = useState(0)
   const [modalSec, setSec] = useState(0)
   const [modalAMPM, setAMPM] = useState(0)
@@ -63,53 +68,36 @@ const Home = () => {
   const dropDown4 = React.useRef();
   const dropDown5 = React.useRef();
   const interval = useRef(null)
+  const countDown = useRef(1)
   const mainArray = useRef([]);
   const connectionAlertDisplaye = useRef(false)
-  // const isConnected = useRef(null)
 
-  // const unsubscribe = NetInfo.addEventListener((state) => {
 
-  //   isConnected.current = state.isConnected
-  // })
-
-  // useMemo(() => {
-  //   console.log("FMAKOFNOSKn",isConnected.current)
-  //   if(!isConnected.current)
-  //   setdisplayNetworkState(true)
-  //   return {};
-  // }, [isConnected.current]);
 
   useEffect(() => {
     // interval.current = setInterval(() => {
     //   console.log("On Refreshing Data");
+    //callData()
 
     const removeNetInfoSubscription = NetInfo.addEventListener((state) => {
-
+      setState(state.isConnected)
       const offline = !(state.isConnected && state.isInternetReachable);
+      setConnected(state.isConnected)
       setdisplayNetworkState(state.isConnected)
-      console.log("OnEventChangeLog", state.isConnected + "" + "" + state.isWifiEnabled);
-      if (state.isConnected) {
-        console.log("OnConnected")
-      }
-
-      setTimeout(callData,
-        2000
-    )
-      
-
-      // if (!called) {
-      //   setCalled(true)
-      //   // console.log("CalledFromNetworkInfo")
-      //   (async () => {
-      //     const data = await fetchData();
-      //  })
-      // }
-
-
-
+      console.log("OnEventChangeLog=>>isConnected::", state.isConnected + "----" + "-----WIFI::" + state.isWifiEnabled);
 
       //setOfflineStatus(offline);
     });
+
+    const subscription = Dimensions.addEventListener(
+      "change",
+      ({ window, screen }) => {
+        console.log("onScreenDimensions")
+        console.log(window);
+        console.log(screen);
+        setVisible(false)
+      }
+    );
 
     // fetchData()
 
@@ -123,36 +111,37 @@ const Home = () => {
   }, [])
 
   const callData = async () => {
-    const data =  await fetchData()
+    return await fetchData()
   }
 
 
-  useEffect(() => {
-    // setInterval(()=>{
-    //   NetInfo.fetch().then(state => {
-    //     // alert(connectionAlertDisplaye.current + " " + state.isConnected )
-    //     if (!connectionAlertDisplaye.current && !state.isConnected) {
-    //       connectionAlertDisplaye.current = true
-    //       setConnected(false)
-    //       setdisplayNetworkState(true)
-    //       setTimeout(() => {
-    //         setdisplayNetworkState(true)
-    //       }, 5000)
-    //     }
-    //   })
-    // },60000)
+  // useEffect(() => {
+  //   // setInterval(()=>{
+  //   //   NetInfo.fetch().then(state => {
+  //   //     // alert(connectionAlertDisplaye.current + " " + state.isConnected )
+  //   //     if (!connectionAlertDisplaye.current && !state.isConnected) {
+  //   //       connectionAlertDisplaye.current = true
+  //   //       setConnected(false)
+  //   //       setdisplayNetworkState(true)
+  //   //       setTimeout(() => {
+  //   //         setdisplayNetworkState(true)
+  //   //       }, 5000)
+  //   //     }
+  //   //   })
+  //   // },60000)
+  //   // return () => {
+  //   //   console.log("CLEARED")
+  //   //   clearInterval(interval.current)
+  //   //   // unsubscribe()
+  //   // }
+  //   // return () => {
+  //   //   console.log("CLEARED")
+  //   //   clearInterval(interval.current)
+  //   // }
 
-    // return () => {
-    //   console.log("CLEARED")
-    //   clearInterval(interval.current)
-    //   // unsubscribe()
-    // }
-    // return () => {
-    //   console.log("CLEARED")
-    //   clearInterval(interval.current)
 
-    // }
-  }, [])
+
+  // }, [])
 
 
   const getClasses = (token) => {
@@ -189,6 +178,7 @@ const Home = () => {
           arrayios.push({ label: label, key: value, value: value });
         })
         setdisplayNetworkState(true)
+        setCount(0)
         AsyncStorage.setItem("busses", JSON.stringify(arrayios));
         setBusList(arrayios)
       } else {
@@ -217,9 +207,9 @@ const Home = () => {
     })
   }
 
-  const getCheckInOut = async (token, data, key,dataForSaving) => {
+  const getCheckInOut = async (token, data, key, dataForSaving) => {
     console.log("Params For     " + key, data)
-   await ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
+    return ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
       console.log("Response    " + key, response);
       if (isSuccess) {
         // if (connectionAlertDisplaye.current) {
@@ -252,17 +242,19 @@ const Home = () => {
   }
 
   fetchData = async () => {
-
-
     await NetInfo.fetch().then(state => {
-
-          console.log("State",state.isConnected)
+      console.log("State", state.isConnected)
       setdisplayNetworkState(state.isConnected)
-      setLoading(state.isConnected)
+      if (state.isConnected) {
+        setLoading(state.isConnected)
+      }
 
     })
 
 
+    console.log("Dimensions", Dimensions.get('window').width)
+
+     
 
     console.log("OnStartedCalling")
     let data = {
@@ -290,8 +282,8 @@ const Home = () => {
       });
       //data.data=checkInCheckOutDataForUploading;
       AsyncStorage.removeItem("roll_call_array");
-      await getCheckInOut(token, data, "roll_call_array",JSON.stringify(checkInCheckOutDataForUploading))
-      console.log("OnCheckInCheckOut")
+      const roll_call_wait = await getCheckInOut(token, data, "roll_call_array", JSON.stringify(checkInCheckOutDataForUploading))
+      console.log("OnCheckInCheckOut", roll_call_wait)
     }
 
     updateForUploading = JSON.parse(updateForUploading);
@@ -303,7 +295,9 @@ const Home = () => {
       });
       //  console.log("updateEntry", params)
       AsyncStorage.removeItem("roll_call_array_update");
-      await getCheckInOut(token, params, "roll_call_array_update",JSON.stringify(updateForUploading))
+      const roll_call_update = await getCheckInOut(token, params, "roll_call_array_update", JSON.stringify(updateForUploading))
+      console.log("OnCheckInCheckOut", roll_call_update)
+
     }
 
 
@@ -321,8 +315,13 @@ const Home = () => {
       });
       // deleteParams.entries=updateForUploading;
       // console.log("deleteEntry", deleteParams)
-      AsyncStorage.removeItem("roll_call_array_delete");
-      await getCheckInOut(token, deleteParams, "roll_call_array_delete",JSON.stringify(deleteForUploading))
+      // AsyncStorage.removeItem("roll_call_array_delete").then((done)=>{
+
+      // }).catch((error)=>{
+
+      // });
+      const delete_roll_Call = await getCheckInOut(token, deleteParams, "roll_call_array_delete", JSON.stringify(deleteForUploading))
+      console.log("OnCheckInCheckOut", delete_roll_Call)
     }
 
     //await getChildren(token)
@@ -378,12 +377,29 @@ const Home = () => {
       await getClasses(token)
       await getBusses(token)
     }
+
+    // if (isConnectedd&&!isAlertShown) {
+    //   setAlertShown(true)
+    //   Alert.alert(
+    //     //This is title
+    //     'Data Synced',
+    //     //This is body text
+    //     'Data Synced Successfully',
+    //     [
+    //       { text: 'Ok', onPress: () => { 
+    //         setAlertShown(false)
+    //         getChildren(token) 
+    //       } 
+    //     },
+    //     ],
+    //     //null
+    //     //on clicking out side, Alert will not dismiss
+    //   );
+    // }
     setLoading(false)
 
+
     console.log("OnCallingFinishedNow")
-
-
-
   }
 
   const getType = (direction) => {
@@ -415,72 +431,77 @@ const Home = () => {
     filterChild()
   }, [bus, final, nap, sortByClass, sortByName, sortByValue])
 
+  useEffect(() => {
+    if(state)
+    fetchData()
+  }, [state])
+
 
   const filterChild = async () => {
     let allChildren = []
 
-    
+
     // allChildren=JSON.parse(allChildren)
 
 
 
     for (let i = 0; i < mainArray.current.length; i++) {
-      var isKidAdded=false;
+      var isKidAdded = false;
 
       if (final) {
         // console.log("TotalRollCalls",)
         if (mainArray.current[i].roll_calls.length >= 1) {
           if (mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "nap" || mainArray.current[i].roll_calls[mainArray.current[i].roll_calls.length - 1].direction == "in") {
             allChildren.push(mainArray.current[i])
-            isKidAdded=true;
+            isKidAdded = true;
           }
         }
       }
-      if (nap&&!isKidAdded) {
+      if (nap && !isKidAdded) {
         if (mainArray.current[i].grade !== 5) {
           allChildren.push(mainArray.current[i])
-          isKidAdded=true;
+          isKidAdded = true;
         }
-      } else if (bus&&!isKidAdded) {
+      } else if (bus && !isKidAdded) {
 
         if (mainArray.current[i].grade === 5) {
           if (sortByValue === 0 || sortByValue === "" || sortByValue === 'C') {
             allChildren.push(mainArray.current[i])
-            isKidAdded=true;
+            isKidAdded = true;
           } else {
             if (mainArray.current[i].bus === sortByValue) {
               allChildren.push(mainArray.current[i])
-              isKidAdded=true;
+              isKidAdded = true;
             }
           }
         }
       }
-      console.log("sortByClass",sortByClass)
+      console.log("sortByClass", sortByClass)
 
-      if (sortByClass !== 0&&!isKidAdded&&!nap) {
+      if (sortByClass !== 0 && !isKidAdded && !nap) {
         if (sortByClass === 'Todd' && mainArray.current[i].grade == 1) {
           allChildren.push(mainArray.current[i])
-          isKidAdded=true;
+          isKidAdded = true;
         }
         else if (sortByClass === 'PS' && (mainArray.current[i].grade == 2 || mainArray.current[i].grade == 3 || mainArray.current[i].grade == 4)) {
           allChildren.push(mainArray.current[i])
-          isKidAdded=true;
+          isKidAdded = true;
         }
         else if (sortByClass === 'GS' && (mainArray.current[i].class == 9 || mainArray.current[i].class == 10)) {
           allChildren.push(mainArray.current[i])
-          isKidAdded=true;
+          isKidAdded = true;
         } else if (sortByClass == mainArray.current[i].class) {
           allChildren.push(mainArray.current[i])
-          isKidAdded=true;
-        }else if(sortByClass==='ac'&&!nap)
-        {
+          isKidAdded = true;
+        } else if (sortByClass === 'ac' && !nap) {
           allChildren.push(mainArray.current[i])
-          isKidAdded=true;
+          isKidAdded = true;
         }
       }
-      if (!isKidAdded&&(sortByClass == 0) && (sortByValue == 0) && !nap && !bus && !final) {
+      if (!isKidAdded && (sortByClass == 0) && (sortByValue == 0) && !nap && !bus && !final) {
         allChildren.push(mainArray.current[i])
       }
+
     }
 
 
@@ -732,6 +753,59 @@ const Home = () => {
     setVisible(false)
   }
 
+  const onCheckLimit = (value, type) => {
+    const parsedQty = Number.parseInt(value)
+    var numb = 0;
+
+    if (Number.isNaN(parsedQty)) {
+      console.log("isNAN")
+      if (type === 'H') {
+        console.log("onSetting Hour", parsedQty)
+        setHour(1)
+
+      } else if (type === 'M') {
+        console.log("onSetting Minute")
+        setMinute(0)
+      } else if (type === 'S') {
+        console.log("onSetting Seconds")
+        setSec(0)
+      }
+      return;
+      //setter for state
+    } else if (parsedQty > 13 && type == 'H') {
+      // if(type==='H')
+      // {
+      console.log("onSetting>13 Hour", parsedQty)
+      setHour(12)
+      return;
+
+    } else if (parsedQty > 60 && type !== 'H') {
+      if (type === 'M') {
+        console.log("onSetting Minute")
+        setMinute(59)
+      } else if (type === 'S') {
+        console.log("onSetting Seconds")
+        setSec(59)
+      }
+      return;
+    } else {
+      if (type === 'H') {
+        console.log("onSetting Default Hour", parsedQty)
+        setHour(parsedQty)
+
+      } else if (type === 'M') {
+        console.log("onSetting Minute")
+        setMinute(parsedQty)
+      } else if (type === 'S') {
+        console.log("onSetting Seconds")
+        setSec(parsedQty)
+      }
+      return;
+    }
+
+
+  }
+
 
   const onPress = async (item, index) => {
 
@@ -802,8 +876,8 @@ const Home = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {!displayNetworkState ? <View style={{ flexDirection: 'row', width: '100%', height: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: "#f50014" }}>
-        <Text style={{ textAlign: 'center', color: '#fff', fontSize: WP(4) }}>{!isConnected ? "Internet is not available" : "Internet is not available"}</Text>
+      {!displayNetworkState ? <View style={{ flexDirection: 'row', width: '100%', height: '7%', alignItems: 'center', justifyContent: 'center', backgroundColor: "#f50014" }}>
+        <Text style={{ textAlign: 'center', color: '#fff', fontSize: WP(3) }}>{!displayNetworkState ? "Internet is not available" : "Internet is not available"}</Text>
         {/* <TouchableOpacity onPress={() => {
                 fetchData()
             }
@@ -827,19 +901,19 @@ const Home = () => {
             <Text style={styles.school_admin}>{address}</Text>
             <Text style={styles.school_addr}>{city}</Text>
           </View>
-          <View style={styles.school_info}>
-            <Text style={styles.textBold}>Daily Roll Call Sheet</Text>
-            <Text style={styles.school_admin}>{moment().format('dddd  MM/DD/YYYY')}</Text>
+          <View style={styles.school_info2}>
+            <Text style={styles.textBold2}>Daily Roll Call Sheet</Text>
+            <Text style={styles.school_addr}>{moment().format('dddd  MM/DD/YYYY')}</Text>
           </View>
         </View>
         <View style={styles.right_bar}>
           <View>
             <View style={styles.dropDownView1}>
-              <Text style={{ fontSize: WP(2) }}>Sort By:</Text>
+              <Text style={{ fontSize: WP(1.75), marginRight: WP(1) }}>Sort By:</Text>
               <DropDownPicker
                 items={sortBy}
                 arrowColor={AppColor.black}
-                arrowSize={WP(2)}
+                arrowSize={WP(1.5)}
                 showArrow={true}
                 onChangeItem={(item) => {
                   setSortByName(item.key)
@@ -858,16 +932,16 @@ const Home = () => {
               />
             </View>
             <View style={styles.dropDownView2}>
-              <Text style={{ fontSize: WP(2) }}>Class:</Text>
+              <Text style={{ fontSize: WP(1.75), marginRight: WP(1.4) }}>Class:  </Text>
               <DropDownPicker
                 items={classes}
                 arrowColor={AppColor.black}
-                arrowSize={WP(2)}
+                arrowSize={WP(1.5)}
                 showArrow={true}
+                zIndex={10}
                 onChangeItem={(item) => {
                   setSortByClass(item.key)
                 }}
-
                 selectedLabelStyle={{ color: AppColor.black }}
                 containerStyle={styles.dropDownContainerStyle}
                 defaultValue={selectDynamicClass}
@@ -882,7 +956,7 @@ const Home = () => {
             </View>
             {bus ?
               <View style={styles.dropDownView3}>
-                <Text style={{ fontSize: WP(2) }}>Bussing School:</Text>
+                <Text style={{ fontSize: WP(1.75) }}>Bussing School:</Text>
                 <DropDownPicker
                   items={busList}
                   zIndex={10}
@@ -905,51 +979,64 @@ const Home = () => {
                 />
               </View> : null}
           </View>
-          <View style={{ justifyContent: 'space-between' }}>
-            <CheckBox
-              title={"Final"}
-              checked={final}
-              checkedColor={AppColor.purple}
-              onPress={() => {
-                setFinal(!final)
 
-                if (nap) {
-                  setNap(!nap)
-                }
-                if (bus) {
-                  setBus(!bus)
-                }
+        </View>
+        <View style={styles.end_bar}>
+          <CheckBox
+            title={"Final"}
+            checked={final}
+            checkedColor={AppColor.purple}
+            onPress={() => {
+              setFinal(!final)
 
-
-                // filterChild()
-              }}
-              containerStyle={styles.checkBoxContainerStyle}
-              wrapperStyle={styles.checkBoxWrapperStyle}
-              textStyle={styles.checkBoxTextStyle}
-              size={WP(3)}
-            />
-            <CheckBox
-              title={"Nap"}
-              checked={nap}
-              checkedColor={AppColor.purple}
-              onPress={() => {
-
+              if (nap) {
                 setNap(!nap)
-                if (bus) {
-                  setBus(!bus)
-                }
-                if (final) {
-                  setFinal(!final)
-                }
-                // filterChild();
+              }
+              if (bus) {
+                setBus(!bus)
+              }
 
-              }}
-              containerStyle={styles.checkBoxContainerStyle}
-              wrapperStyle={styles.checkBoxWrapperStyle}
-              textStyle={styles.checkBoxTextStyle}
-              size={WP(3)}
-            />
-            {/* <CheckBox
+
+              // filterChild()
+            }}
+            containerStyle={styles.checkBoxContainerStyle}
+            wrapperStyle={styles.checkBoxWrapperStyle}
+            textStyle={styles.checkBoxTextStyle}
+
+          />
+          <CheckBox
+            title={"Nap"}
+            checked={nap}
+            checkedColor={AppColor.purple}
+            onPress={() => {
+
+              setNap(!nap)
+              if (bus) {
+                setBus(!bus)
+              }
+              if (final) {
+                setFinal(!final)
+              }
+              // filterChild();
+
+            }}
+            containerStyle={styles.checkBoxContainerStyle}
+            wrapperStyle={styles.checkBoxWrapperStyle}
+            textStyle={styles.checkBoxTextStyle}
+
+          />
+          {
+            <TouchableOpacity style={styles.refreshBtn} onPress={() => {
+              callData()
+            }}>
+
+              <Text style={styles.refreshBtnText}>{'Refresh'}</Text>
+
+            </TouchableOpacity>
+
+
+
+            /* <CheckBox
               title={"Bus"}
               checked={bus
                 ||sortByClass=="GS"}
@@ -977,8 +1064,9 @@ const Home = () => {
               textStyle={styles.checkBoxTextStyle}
               size={WP(3)}
             /> */}
-          </View>
+
         </View>
+
       </View>
       <ScrollView style={styles.enroll}>
         <FlatList data={children}
@@ -1032,23 +1120,23 @@ const Home = () => {
       >
         <ModalContent>
           <TouchableWithoutFeedback onPress={() => {
-            dropDown1.current.close()
-            dropDown2.current.close()
-            dropDown3.current.close()
+            // dropDown1.current.close()
+            //   dropDown2.current.close()
+            //  dropDown3.current.close()
             dropDown4.current.close()
             dropDown5.current.close()
           }}>
-            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ marginLeft:WP(4),marginRight:WP(4), flexDirection: 'row', alignItems: 'center',flexWrap:'wrap', justifyContent: 'space-evenly' }}>
 
               <Text style={{ width: '100%', textAlign: 'center', marginBottom: 20 }}>Edit Time</Text>
-              <View style={{ height: WP(20), flexDirection: 'row', zIndex: 2000 }}>
-                <DropDownPicker
+              <View style={{ height: WP(20), flexDirection: 'row',justifyContent: 'space-evenly' }}>
+                {/* <DropDownPicker
                   items={hours}
                   defaultValue={modalHour}
-                  dropDownStyle={{ height: 10, backgroundColor: '#fafafa' }}
                   containerStyle={{ height: 40, width: WP(17) }}
-                  style={{ backgroundColor: '#fafafa' }}
-                  dropDownMaxHeight={WP(25)}
+                  style={{ backgroundColor: '#fafafa',paddingBottom:5 }}
+                  dropDownMaxHeight={WP(15)}
+                  setValue={modalHour}
                   controller={(instance) => dropDown1.current = instance}
                   onOpen={() => {
                     dropDown2.current.close()
@@ -1056,18 +1144,43 @@ const Home = () => {
                     dropDown4.current.close()
                     dropDown5.current.close()
                   }}
+                 // zIndex={20}
                   onChangeItem={item => {
                     setHour(item.value)
                   }}
-                />
+                /> */
+                  <TextInput
+                    style={styles.input}
+                    onChangeText={text => onCheckLimit(text, 'H')}
+                    value={modalHour}
+                    placeholder="useless placeholder"
+                    keyboardType="numeric"
+                    defaultValue={'' + modalHour}
+                    text={modalHour}
+                    maxLength={2}
+                  />
+                }
 
-                <DropDownPicker
+
+                {
+                  <TextInput
+                    style={styles.input}
+                    onChangeText={text => onCheckLimit(text, 'M')}
+                    value={modalMinute}
+                    placeholder="Minutes"
+                    keyboardType="numeric"
+                    defaultValue={'' + modalMinute}
+                    text={modalMinute}
+                    maxLength={2}
+                  />
+
+                /* <DropDownPicker
                   items={minutes()}
                   defaultValue={modalMinute}
                   containerStyle={{ height: 40, width: WP(17), marginLeft: 10 }}
-                  style={{ backgroundColor: '#fafafa' }}
+                  style={{ backgroundColor: '#fafafa',paddingBottom:5 }}
                   dropDownStyle={{ backgroundColor: '#fafafa' }}
-                  dropDownMaxHeight={WP(25)}
+                  dropDownMaxHeight={WP(15)}
                   setValue={modalMinute}
                   onOpen={() => {
                     dropDown1.current.close()
@@ -1078,14 +1191,15 @@ const Home = () => {
                   onChangeItem={item => {
                     setMinute(item.value)
                   }}
+                //  zIndex={20}
                   controller={(instance) => dropDown2.current = instance}
-                />
+                /> */}
 
-                <DropDownPicker
+                {/* <DropDownPicker
                   items={minutes()}
                   defaultValue={modalSec}
                   containerStyle={{ height: 40, width: WP(17), marginLeft: 10 }}
-                  style={{ backgroundColor: '#fafafa' }}
+                  style={{ backgroundColor: '#fafafa',paddingBottom:5 }}
                   dropDownStyle={{ backgroundColor: '#fafafa' }}
                   dropDownMaxHeight={WP(25)}
                   onChangeItem={item => {
@@ -1098,8 +1212,19 @@ const Home = () => {
                     dropDown4.current.close()
                     dropDown5.current.close()
                   }}
-                />
-
+                //  zIndex={20}
+                /> */
+                  <TextInput
+                    style={styles.input}
+                    onChangeText={text => onCheckLimit(text, 'S')}
+                    value={modalSec}
+                    placeholder="Seconds"
+                    keyboardType="numeric"
+                    defaultValue={'' + modalSec}
+                    text={modalSec}
+                    maxLength={2}
+                  />
+                }
 
                 <DropDownPicker
                   items={AMPM}
@@ -1110,9 +1235,9 @@ const Home = () => {
                   dropDownMaxHeight={WP(25)}
                   controller={(instance) => dropDown4.current = instance}
                   onOpen={() => {
-                    dropDown1.current.close()
-                    dropDown2.current.close()
-                    dropDown3.current.close()
+                    // dropDown1.current.close()
+                    // dropDown2.current.close()
+                    // dropDown3.current.close()
                     dropDown5.current.close()
                   }}
                   onChangeItem={item => {
@@ -1124,24 +1249,23 @@ const Home = () => {
                 <DropDownPicker
                   items={type}
                   defaultValue={modalType}
-                  containerStyle={{ height: 40, width: WP(18), marginLeft: 10 }}
+                  containerStyle={{ height: 40, width: WP(17), marginLeft: 10 }}
                   style={{ backgroundColor: '#fafafa' }}
                   dropDownStyle={{ backgroundColor: '#fafafa' }}
-                  dropDownMaxHeight={WP(25)}
+                  dropDownMaxHeight={WP(30)}
                   onChangeItem={item => {
                     setType(item.value)
                   }}
                   controller={(instance) => dropDown5.current = instance}
-
                   onOpen={() => {
-                    dropDown1.current.close()
-                    dropDown3.current.close()
+                    // dropDown1.current.close()
+                    // dropDown3.current.close()
                     dropDown4.current.close()
-                    dropDown2.current.close()
+                    // dropDown2.current.close()
                   }}
                 />
               </View>
-              <View style={{ flexDirection: 'row' }}>
+              <View style={{ marginTop: WP(20), flexDirection: 'row' }}>
                 <TouchableOpacity onPress={() => {
                   Alert.alert(
                     //This is title
@@ -1183,41 +1307,86 @@ const Home = () => {
 const styles = StyleSheet.create({
   left_bar: {
     flexDirection: 'row',
-    justifyContent: "space-between",
-    width: '50%',
-    marginTop: WP(2),
+    justifyContent: "flex-start",
+    width: '45%'
   },
   right_bar: {
-    marginTop: WP(3),
     flexDirection: 'row',
+    justifyContent: "flex-start",
+
+    flexWrap: "wrap",
+    width: '20%'
+  },
+  end_bar: {
+    flexDirection: 'row',
+    justifyContent: "space-around",
+    alignItems: 'center',
+    flexWrap: "wrap",
+    width: '35%'
   },
   school_info: {
-    justifyContent: "center",
-    alignItems: "center",
-    width: '50%',
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    marginLeft: WP(1.5),
+    width: '50%'
+
+  },
+  school_info2: {
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    width: '50%'
+
+  },
+  input: {
+    height: 40,
+    width: WP(17),
+    marginLeft: 10,
+    borderWidth: 1,
+    padding: 5,
+    backgroundColor: '#fafafa'
+
   },
   rowDirection: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     borderBottomWidth: 3,
     zIndex: 10,
     justifyContent: 'space-between'
   },
+  input_: {
+    margin: 15,
+    height: 40,
+    width: WP(17),
+    borderColor: '#000000',
+    borderWidth: 1
+  },
   textBold: {
     fontWeight: 'bold',
-    fontSize: WP(3.5)
+    fontSize: WP(2.5)
+  },
+  textBold2: {
+    fontWeight: 'bold',
+    fontSize: WP(2)
   },
   school_addr: {
-    fontSize: WP(2)
+    fontSize: WP(1.5)
+  },
+  refreshBtnText: {
+    fontSize: WP(2),
+    justifyContent: "center",
+    textAlign: "center",
+    alignItems: 'center'
   },
   time: {
     fontSize: WP(2),
     color: 'black'
   },
   school_admin: {
-    fontSize: WP(2.75)
+    fontSize: WP(2.2)
   },
   enroll: {
     flex: 1,
+
     marginTop: WP(2),
     padding: WP(3)
   },
@@ -1253,13 +1422,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'grey',
   },
-  checkBoxContainerStyle: {
-    height: WP(4),
+  refreshBtn: {
+    height: WP(3),
+    width: WP(10),
+    borderRadius: WP(0.5),
     justifyContent: 'center',
+    alignItems: "center",
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: 'grey',
+  },
+  checkBoxContainerStyle: {
+    height: WP(5),
+    justifyContent: 'center',
+    alignItems: 'center',
     width: WP(10),
   },
   checkBoxWrapperStyle: {
-    height: WP(4),
+    height: WP(5),
     width: WP(10),
   },
   checkBoxTextStyle: {
@@ -1281,18 +1461,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: WP(1),
     width: WP(35),
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     zIndex: 3000
   },
 
   dropDownView2: {
     flexDirection: 'row',
-    zIndex: 20,
     alignItems: 'center',
     marginBottom: WP(1),
     width: WP(35),
-    justifyContent: 'space-between',
-    zIndex: 2000
+    justifyContent: 'flex-start',
+    zIndex: 1000
   },
 
   dropDownView3: {
@@ -1301,7 +1480,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: WP(1),
     width: WP(35),
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     zIndex: 1000
   },
 
@@ -1323,12 +1502,12 @@ const styles = StyleSheet.create({
     zIndex: 20
   },
   dropDown: {
-    zIndex: 20,
+
     elevation: 5,
   },
   dropDownContainerStyle: {
-    height: WP(8),
-    width: WP(20),
+    height: WP(4),
+    width: WP(15),
   },
   mainDropDown: {
     backgroundColor: '#fff',

@@ -74,31 +74,26 @@ const Login = () => {
       <Text style={styles.headerText}>Select School and Enter Password:</Text>
       <View style={{ flexDirection: 'row' ,zIndex:10,alignItems:'center',}}>
         <Text style={{ fontSize: WP(3) }}>School: </Text>
-        <DropDownPicker
-          //   defaultValue={}
-          items={schools}
-        //  zIndex={5}
-          arrowColor={AppColor.black}
-          arrowSize={WP(2)}
-          showArrow={true}
-          // defaultIndex={placeholderIndex}
-          onChangeItem={(item) => {
-            // this.setState({
-            //   placeholderIndex: 1,
-            //   selectedValue: item.key,
-            // });
-            setSchool(item.key)
-            // this.props.currencyCallback(item.key)
-          }}
-          selectedLabelStyle={{ color: AppColor.black }}
-          containerStyle={styles.dropDownContainerStyle}
-          placeholderStyle={styles.dropDownplaceholder}
-          labelStyle={styles.dropDownLable}
-          itemStyle={styles.dropDownItem}
-          dropDownStyle={styles.dropDown}
-          activeLabelStyle={styles.dropDownActiveLable}
-          style={styles.mainDropDown}
-          dropDownMaxHeight={WP(40)}
+       
+          <DropDownPicker
+                items={schools}
+                arrowColor={AppColor.black}
+                arrowSize={WP(1.5)}
+                showArrow={true}
+                onChangeItem={(item) => {
+                  setSchool(item.key)
+                }}
+                selectedLabelStyle={{ color: AppColor.black }}
+                containerStyle={styles.dropDownContainerStyle}
+                placeholderStyle={styles.dropDownplaceholder}
+                labelStyle={styles.dropDownLable}
+                itemStyle={styles.dropDownItem}
+                dropDownStyle={styles.dropDown}
+                textStyle={{ color: 'red' }}
+                activeLabelStyle={styles.dropDownActiveLable}
+                style={styles.mainDropDown}
+                dropDownMaxHeight={WP(40)}
+             
         />
       </View>
       <View style={{ flexDirection: 'row' ,marginTop:WP(5),alignItems:'center'}}>
@@ -196,7 +191,7 @@ const styles = StyleSheet.create({
     zIndex: 20
   },
   dropDown: {
-    zIndex: 20,
+  
     elevation: 5,
     // marginTop:WP(10)
   },
