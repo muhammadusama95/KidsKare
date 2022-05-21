@@ -209,7 +209,7 @@ const Home = () => {
 
   const getCheckInOut = async (token, data, key, dataForSaving) => {
     console.log("Params For     " + key, data)
-    return ApiServices.checkInOut(token, data, ({ isSuccess, response }) => {
+    return new Promise(resolve=>{ ApiServices.checkInOut(token, data, async({ isSuccess, response }) => {
       console.log("Response    " + key, response);
       if (isSuccess) {
         // if (connectionAlertDisplaye.current) {
@@ -222,8 +222,8 @@ const Home = () => {
         // }
         // response.errors[0] == "Error getting old entry!"
         setdisplayNetworkState(true);
-        AsyncStorage.removeItem(key);
-        return "";
+        await AsyncStorage.removeItem(key);
+        resolve("");
 
       } else {
         setdisplayNetworkState(false);
@@ -234,11 +234,12 @@ const Home = () => {
         //   setdisplayNetworkState(true)
         // }, 5000)
 
-        AsyncStorage.setItem(key, dataForSaving)
+        await AsyncStorage.setItem(key, dataForSaving)
         console.log("Keep Data on hold for " + key);
-        return "";
+        resolve("");
       }
     })
+  })
   }
 
   fetchData = async () => {
